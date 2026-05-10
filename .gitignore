@@ -30,4 +30,9 @@ out/
 # Agents
 .agents/brain/
 .agents/scratch/
-.claude/
+.claude/plugins/skills
+.claude/worktrees/
+
+# Misc
+.omx/
+__pycache__/

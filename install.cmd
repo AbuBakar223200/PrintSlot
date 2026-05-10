@@ -11,7 +11,7 @@ if "!TARGET!"=="" set "TARGET=latest"
 REM Validate target parameter
 if /i "!TARGET!"=="stable" goto :target_valid
 if /i "!TARGET!"=="latest" goto :target_valid
-echo !TARGET! | findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*" >nul
+call :validate_version "!TARGET!"
 if !ERRORLEVEL! equ 0 goto :target_valid
 
 echo Usage: %0 [stable^|latest^|VERSION] >&2
@@ -35,11 +35,9 @@ REM Set constants
 set "DOWNLOAD_BASE_URL=https://downloads.claude.ai/claude-code-releases"
 set "DOWNLOAD_DIR=%USERPROFILE%\.claude\downloads"
 REM Use native ARM64 binary on ARM64 Windows, x64 otherwise
-if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
-    set "PLATFORM=win32-arm64"
-) else (
-    set "PLATFORM=win32-x64"
-)
+set "PLATFORM=win32-x64"
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "PLATFORM=win32-arm64"
+if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "PLATFORM=win32-arm64"
 
 REM Create download directory
 if not exist "!DOWNLOAD_DIR!" mkdir "!DOWNLOAD_DIR!"
@@ -122,6 +120,36 @@ REM ============================================================================
 REM SUBROUTINES
 REM ============================================================================
 
+:validate_version
+REM Validate semantic version string.
+REM Args: %1=Version
+set "VERSION_CANDIDATE=%~1"
+set "VERSION_REMAINDER=%VERSION_CANDIDATE%"
+set "VERSION_PART_COUNT=0"
+
+:validate_version_loop
+for /f "tokens=1* delims=." %%i in ("%VERSION_REMAINDER%") do (
+    set "VERSION_PART=%%i"
+    set "VERSION_REMAINDER=%%j"
+)
+
+if "%VERSION_PART%"=="" exit /b 1
+call :is_numeric "%VERSION_PART%"
+if !ERRORLEVEL! neq 0 exit /b 1
+set /a VERSION_PART_COUNT+=1
+
+if defined VERSION_REMAINDER goto :validate_version_loop
+if !VERSION_PART_COUNT! equ 3 exit /b 0
+exit /b 1
+
+:is_numeric
+REM Return success only when the argument contains digits and nothing else.
+REM Args: %1=String
+set "NUMERIC_VALUE=%~1"
+if "%NUMERIC_VALUE%"=="" exit /b 1
+for /f "delims=0123456789" %%i in ("%NUMERIC_VALUE%") do exit /b 1
+exit /b 0
+
 :download_file
 REM Downloads a file using curl
 REM Args: %1=URL, %2=OutputPath
@@ -145,13 +173,13 @@ set "IN_PLATFORM_SECTION="
 REM Read the manifest line by line
 for /f "usebackq tokens=*" %%i in ("!MANIFEST_PATH!") do (
     set "LINE=%%i"
-    
+
     REM Check if this line contains our platform
     echo !LINE! | findstr /c:"\"%PLATFORM_NAME%\":" >nul
     if !ERRORLEVEL! equ 0 (
         set "IN_PLATFORM_SECTION=1"
     )
-    
+
     REM If we're in the platform section, look for checksum
     if defined IN_PLATFORM_SECTION (
         echo !LINE! | findstr /c:"\"checksum\":" >nul
@@ -163,7 +191,7 @@ for /f "usebackq tokens=*" %%i in ("!MANIFEST_PATH!") do (
                 set "CHECKSUM_PART=!CHECKSUM_PART: =!"
                 set "CHECKSUM_PART=!CHECKSUM_PART:"=!"
                 set "CHECKSUM_PART=!CHECKSUM_PART:,=!"
-                
+
                 REM Check if it looks like a SHA256 (64 hex chars)
                 if not "!CHECKSUM_PART!"=="" (
                     call :check_length "!CHECKSUM_PART!" 64
@@ -174,7 +202,7 @@ for /f "usebackq tokens=*" %%i in ("!MANIFEST_PATH!") do (
                 )
             )
         )
-        
+
         REM Check if we've left the platform section (closing brace)
         echo !LINE! | findstr /c:"}" >nul
         if !ERRORLEVEL! equ 0 set "IN_PLATFORM_SECTION="
