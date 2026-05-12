@@ -1,0 +1,5 @@
+# Product Brief
+
+> See also: [`CONTEXT.md`](../CONTEXT.md) — stack, golden rules, naming conventions, feature ownership.
+
+PrintSlot is a mobile platform (iOS 16+ / Android 8+) that digitizes the print shop experience for university campuses and local communities in Bangladesh. Customers upload documents, configure print settings (color mode, paper size, orientation, copies, page range, duplex), pay via in-app wallet or cash at pickup, and either book a scheduled time slot or join a live queue — eliminating physical queues and miscommunicated print instructions. Print shop owners manage jobs, slots, staff, and pricing through a real-time dashboard. A platform admin governs shop onboarding, global slot configuration, and platform-wide analytics. The app serves four roles — Customer, Staff, Shop Owner, Platform Admin — across a single React Native (Expo Router) frontend backed by a NestJS API, Supabase PostgreSQL via Prisma, Cloudinary file storage, socket.io real-time updates, and Expo push notifications. Built by Team ParaDox as an academic project with real-launch potential.
