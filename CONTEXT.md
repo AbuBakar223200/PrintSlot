@@ -2,6 +2,27 @@
 
 Read this before touching any file.
 
+---
+
+## Document Map
+
+Use this to know which file to open before doing any work.
+
+| I need to know… | Read |
+|---|---|
+| What we are building and why | `docs/PRD.md` §1–4 |
+| Core user flows step by step | `docs/PRD.md` §5 |
+| Full feature list with acceptance criteria | `docs/PRD.md` §6 + `docs/02-feature-registry.md` |
+| Every entity, field, constraint, pricing formula, ETA algorithm | `docs/04-data-model.md` |
+| Every API endpoint, request/response shape, WebSocket events | `docs/05-api-contract.md` |
+| High-level architecture, ADRs, module folder layout | `docs/TECHNICAL_DESIGN.md` |
+| What "done" looks like (20 criteria) | `docs/06-definition-of-done.md` |
+| Coding rules, patterns, examples for NestJS + React Native | `docs/CODING_STANDARDS.md` |
+| Known risks and mitigations | `docs/07-risk-register.md` |
+| What is explicitly NOT being built in v1 | `docs/PRD.md` §4 (Non-Goals) — summary below |
+
+---
+
 ## What This App Does
 
 PrintSlot digitizes the print shop experience. Customers upload documents, configure print settings per file, pay via wallet or cash, and either join a live queue or book a time slot. Staff manage jobs through status stages. Shop Owners run their shop and staff. Platform Admin governs the platform.
@@ -63,6 +84,11 @@ PrintSlot digitizes the print shop experience. Customers upload documents, confi
 - Zustand stores: `useXxxStore.ts`
 - TanStack hooks: `useXxx.ts` (wraps useQuery/useMutation)
 - NestJS DTOs: `action-resource.dto.ts` (e.g. `create-order.dto.ts`)
+- NestJS modules: `<feature>.module.ts`
+- NestJS services: `<feature>.service.ts`
+- NestJS controllers: `<feature>.controller.ts`
+- NestJS gateways: `<feature>.gateway.ts` (WebSocket — orders module only)
+- Mobile API wrappers: `<feature>.api.ts` (typed fetch functions, called by hooks)
 - i18n keys: `feature.component.label` (e.g. `orders.card.status`)
 
 ---
@@ -200,3 +226,157 @@ _Avoid_: settings, config, platform settings
 - **Soft delete for SlotTemplates.** Never hard-deleted. `deletedAt` marks retirement.
 - **Shop deactivation drains gracefully.** Active orders complete; new orders blocked immediately.
 - **COLLECTED = cash paid** for CASH orders. No separate payment confirmation step.
+
+---
+
+## Order State Machine
+
+The only valid status transitions. Any other transition → 400.
+
+```
+                    [Customer]
+QUEUED     ──────────────────────────► CANCELLED
+    │                                       ▲
+    │ [Staff]                               │ [Customer, before PROCESSING only]
+    ▼                                       │
+PROCESSING ──► READY ──► COLLECTED    SCHEDULED
+                               ▲           │
+                               │           │ [Staff]
+                               └───────────┘
+```
+
+Linear form:
+```
+QUEUED     → PROCESSING → READY → COLLECTED   (queue mode, staff-driven)
+SCHEDULED  → PROCESSING → READY → COLLECTED   (slot mode, staff-driven)
+QUEUED     → CANCELLED                         (customer only)
+SCHEDULED  → CANCELLED                         (customer only)
+```
+
+- `processingStartedAt` stamped on → PROCESSING.
+- `readyAt` stamped on → READY.
+- `cancelledAt` stamped on → CANCELLED.
+- Optimistic lock: `PATCH /orders/:id/status` requires `expectedCurrentStatus`; 409 on mismatch.
+
+---
+
+## Pricing Formula
+
+Lives exclusively in `OrdersService.calculatePrice()`. Never on the client.
+
+```
+Per OrderFile:
+  base      = resolvedPages × copies × (colorMode=COLOR ? colorRate : bwRate)
+  surcharge = paperSize=A3  ? resolvedPages × copies × a3Surcharge : 0
+  body      = duplex        ? base × (1 − duplexDiscount)           : base
+  subtotal  = body + surcharge
+
+Order:
+  totalPrice = SUM(subtotal for all OrderFiles)
+  resolvedPages = pageRange ? parseRange(pageRange).length : detectedPages
+```
+
+`totalPrice`, `subtotalPrice`, `resolvedPages` — never accepted from any client request body.
+`POST /orders/preview-price` uses the identical formula — they must never diverge.
+
+---
+
+## API Error Codes
+
+| Code | Meaning in this system |
+|---|---|
+| 400 | Zod validation failure; violated business rule (cancel too late, wrong status step, resubmit on SUSPENDED shop, file count outside 1–10, page range out of bounds, booking horizon exceeded, wallet top-up limits violated) |
+| 401 | Missing or expired JWT → redirect to login |
+| 402 | Insufficient Wallet balance — only this code, nothing else |
+| 403 | Role or ownership violation |
+| 404 | Resource not found |
+| 409 | Optimistic lock mismatch; slot full; duplicate (shopId, templateId, date) |
+| 413 | File exceeds 20 MB (Multer, automatic) |
+| 415 | Unsupported MIME type |
+| 500 | Unhandled server exception — log server-side, return generic message to client |
+
+---
+
+## WebSocket Events (namespace `/orders`)
+
+Handshake auth: `{ token: <supabase-jwt> }`.
+
+| Event | Direction | Payload | When |
+|---|---|---|---|
+| `order:join` | Client → Server | `{ orderId }` | Customer mounts Order Detail screen |
+| `order:leave` | Client → Server | `{ orderId }` | Customer unmounts Order Detail screen |
+| `order:status_changed` | Server → Client | `{ orderId, status, updatedAt }` | Staff advances status |
+| `order:queue_updated` | Server → Client | `{ orderId, position, etaMins }` | Any status change that shifts queue positions |
+
+- Always emit `order:leave` and `socket.off(...)` in the `useEffect` cleanup.
+- On reconnect, re-emit `order:join` automatically.
+- Update TanStack Query cache directly on socket events — do not push to Zustand.
+- TanStack Query polls `GET /orders/:id` every 30 s as fallback — never `setInterval` in `useEffect`.
+
+---
+
+## Notification Events (all 12)
+
+Every event must: (1) create a `Notification` DB row, (2) push to all `UserDevice` rows for the recipient. Push failure is non-fatal. DB record is always created regardless of push outcome.
+
+| Event type | Recipient |
+|---|---|
+| `ORDER_PLACED` | Customer |
+| `ORDER_ACCEPTED` | Customer |
+| `ORDER_READY` | Customer |
+| `ORDER_CANCELLED` | Customer |
+| `NEW_ORDER` | Staff + Shop Owner |
+| `WALLET_TOPUP` | Customer |
+| `WALLET_DEDUCTED` | Customer |
+| `SHOP_APPROVED` | Shop Owner |
+| `SHOP_REJECTED` | Shop Owner |
+| `SHOP_SUSPENDED` | Shop Owner |
+| `STAFF_ASSIGNED` | Promoted user |
+| `LOW_BALANCE` | Customer (fires after every debit where new balance < `AppConfig.LOW_BALANCE_THRESHOLD`) |
+
+---
+
+## ETA Algorithm (summary)
+
+Full spec: `docs/04-data-model.md` § Queue ETA Algorithm.
+
+1. Take the last 20 completed Orders (`status=READY`) at this Shop.
+2. Compute `avgMinsPerColorPage` and `avgMinsPerBWPage` from their `processingStartedAt → readyAt` durations.
+3. **Fallback** (< 10 completed orders): use `shop.defaultProcessingMins / 10` as rate for both.
+4. For each Order ahead in the queue: `estimated = colorPages × colorRate + bwPages × bwRate`.
+5. Customer ETA = sum of all orders ahead + this order's own estimate.
+
+Broadcast via `order:queue_updated` on every status change that affects queue position. Never stored — always recomputed fresh.
+
+---
+
+## V1 Non-Goals
+
+Do not build these. Any PR adding them will be rejected.
+
+- Payment gateway (bKash / card). Wallet top-up is admin-credit only in v1.
+- PDF receipt export and receipt image sharing (P1 — after v1).
+- Web dashboard. All roles are mobile-only.
+- Multi-shop ownership. One Shop Owner = one Shop.
+- Customer support / dispute / manual refund UI.
+- Document preview before printing.
+- Direct printer integration (hardware).
+- Guest ordering. All users must be registered.
+- Advanced analytics (trend charts, per-staff productivity, forecasting).
+
+---
+
+## Module API Responsibilities (quick reference)
+
+| Module | Owns |
+|---|---|
+| `auth` | Register, login, JWT validation, `GET /auth/me` |
+| `users` | Profile update, UserDevice upsert/delete |
+| `shops` | Shop CRUD, status transitions (`PATCH /shops/:id/status`), slot availability queries |
+| `slots` | SlotTemplate CRUD (admin), ShopSlot open/close (owner) |
+| `upload` | File validation, Cloudinary upload, PDF page detection via `pdf-parse` |
+| `orders` | Order creation, price calculation, status advance, cancel, history, ETA, WebSocket gateway (`OrdersGateway`) |
+| `wallet` | Balance query, transaction history, debit, credit, top-up (admin + gateway stub) |
+| `notifications` | Notification row creation, Expo push fan-out, mark-read |
+| `staff` | Staff assignment (`POST /shops/:id/staff`), demotion (`DELETE /shops/:id/staff/:userId`) |
+| `admin` | Platform analytics, AppConfig CRUD |
