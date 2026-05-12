@@ -4,6 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Branch Naming
+
+Every branch **must** follow this format:
+
+```
+ihm/<type>/<kebab-case-description>
+```
+
+**Allowed types:**
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or capability |
+| `fix` | Bug fix |
+| `hotfix` | Urgent production fix |
+| `refactor` | Code restructure with no behavior change |
+| `chore` | Tooling, deps, config, CI — no production code change |
+| `docs` | Documentation only |
+| `test` | Adding or fixing tests only |
+
+**Rules:**
+
+- Description is 2–5 words, kebab-case, present tense, no articles
+- Maximum 60 characters total
+- Never use `dev/`, `patch`, `update`, `temp`, `wip`, or any other generic name
+
+**Good examples:**
+```
+ihm/feat/orders-slot-booking
+ihm/fix/auth-jwt-token-refresh
+ihm/chore/upgrade-prisma-v6
+ihm/refactor/wallet-balance-calculation
+ihm/docs/api-response-shape
+ihm/test/order-status-transitions
+ihm/hotfix/double-charge-on-retry
+```
+
+**Bad examples — never create these:**
+```
+dev/something
+feat/orders-slot-booking       ← missing ihm/ prefix
+ihm/feature/something          ← wrong type name
+ihm/feat/fix                   ← too vague
+```
+
+---
+
 ## Essential Reading
 
 Before touching any file, read these in order:
@@ -158,6 +205,68 @@ await this.prisma.$transaction(async (tx) => {
   await tx.walletTransaction.create({ ... });
 });
 ```
+
+---
+
+## React Native Rules (`apps/mobile`)
+
+> Full rules with code examples live in `AGENTS.md`. This is the quick-reference summary.
+
+### CRITICAL — Never break these
+
+| Rule | Requirement |
+|---|---|
+| **No falsy &&** | `{count && <X />}` crashes if `count=0`. Use `{count > 0 ? <X /> : null}` or `{!!count && <X />}` |
+| **Strings in Text** | Every string literal must be inside `<Text>` — never a direct child of `<View>` |
+| **Virtualize all lists** | Use `FlashList` for every scrollable list — never `ScrollView` + `.map()` |
+| **No scroll state** | Never `useState` for scroll position — use Reanimated `useSharedValue` + `useAnimatedScrollHandler` |
+| **Native deps in app** | All packages with native code must be in `apps/mobile/package.json` for autolinking |
+
+### HIGH — Default to these
+
+| Rule | Requirement |
+|---|---|
+| **Images** | Always `expo-image` — never RN `Image`. Cloudinary list thumbnails: append `?w=120&h=120&c=fill&q=auto` |
+| **Animations** | Animate `transform` + `opacity` only — never `width`, `height`, `margin`, `padding` |
+| **Pressable** | Use `Pressable` — never `TouchableOpacity` or `TouchableHighlight` |
+| **Modals** | Native `<Modal presentationStyle="formSheet">` — never JS bottom sheet libraries |
+| **Menus** | Use `zeego` — never custom absolute-positioned JS menus |
+| **Stable list refs** | Never `.map()` data inline before passing to `FlashList` — keep inner object references stable |
+| **Light list items** | No queries or context inside list items — fetch at parent, pass primitives as props |
+| **Zustand in lists** | Use Zustand selectors inside list items instead of `useContext` |
+
+### MEDIUM — Follow consistently
+
+| Rule | Requirement |
+|---|---|
+| **Derive don't store** | Compute values from state instead of storing derived state in `useState` |
+| **State = ground truth** | Store `pressed` (0/1), not `scale` (0.95). Derive visuals via `interpolate` |
+| **useDerivedValue** | Derive Reanimated values declaratively — use `useAnimatedReaction` for side effects only |
+| **Safe areas** | Use `contentInsetAdjustmentBehavior="automatic"` on root ScrollView — not `SafeAreaView` wrapper |
+| **contentInset** | Dynamic bottom spacing via `contentInset={{ bottom: x }}` — not `paddingBottom` |
+| **Styling** | Use `gap` between siblings (not `margin`). `borderCurve: 'continuous'` with all rounded corners. CSS `boxShadow` string over legacy shadow props |
+| **Dispatch updater** | Use `setState(prev => ...)` when next state depends on current value |
+| **Compound components** | `Button` + `ButtonText` + `ButtonIcon` pattern — not polymorphic string children |
+| **Single dep versions** | Pin exact versions across all packages — no `^` or `~` in RN deps |
+
+### LOW — Apply when relevant
+
+| Rule | Requirement |
+|---|---|
+| **Fonts** | Use `expo-font` config plugin (embed at build) — not `useFonts` async loading |
+| **Intl objects** | Hoist `Intl.NumberFormat` / `Intl.DateTimeFormat` to module scope — never create inside render |
+| **Design system imports** | Import `View`, `Text`, `Button` from `@/components/` — not directly from `react-native` |
+| **GestureDetector** | For animated press states (scale/opacity), use `Gesture.Tap()` — not Pressable's `onPressIn/Out` |
+
+### PrintSlot-specific mobile rules
+
+- **TanStack Query is the server cache** — never `useXxxStore.setState({ data: serverData })`. Invalidate queries on mutation success.
+- **Zustand is UI state only** — wizard steps, auth session, connectivity. Not server data.
+- **Navigation** — always `router.push/replace` from `expo-router`. Never `useNavigation()`.
+- **Role guards** — enforce in route group `_layout.tsx` files, never inside screen components.
+- **Order display** — show `order.orderNumber` (`PS-XXXXX`) to users; use `order.id` (UUID) in API calls and routes.
+- **Real-time** — WebSocket `order:status_changed` is primary; `refetchInterval: 30_000` in TanStack Query is fallback. Never `setInterval` in `useEffect`.
+- **Optimistic status lock** — always include `expectedCurrentStatus` on `PATCH /orders/:id/status`. Handle 409 by refetching and letting user retry.
 
 ---
 
