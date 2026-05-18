@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,14 @@ export default function ProfileScreen() {
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // Sync form fields when the auth user changes — handles first-mount-before-hydration,
+  // post-save server normalization (trimmed values), and logout->relogin flows.
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name);
+    setPhone(user.phone ?? '');
+  }, [user?.id, user?.updatedAt]);
 
   const isDirty = useMemo(() => {
     if (!user) return false;
