@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { AppController } from './app.controller';
 
 /**
  * Root application module.
@@ -24,6 +25,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
     PrismaModule,
     AuthModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_FILTER,
