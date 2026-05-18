@@ -85,6 +85,21 @@ Before adding any new function, component, hook, service, DTO, type, utility, or
 
 ---
 
+## Slice Completion Checklist
+
+Every slice and every GitHub issue **must** go through this checklist before it is considered done. Do not skip any step even if the code was already merged.
+
+1. **All acceptance criteria met** — re-read the GitHub issue body and confirm every bullet is addressed.
+2. **Tests pass** — unit tests (service + controller) and, where applicable, e2e tests all green.
+3. **`docs/08-implementation-slices.md` updated** — add the slice row (or update its `Status` to `Closed`) and record the GitHub issue number and close date. Use `YYYY-MM-DD` format for dates.
+4. **GitHub issue closed** — close the issue via `gh issue close <number> --comment "Implemented in PR #<pr>"`. Never leave a merged slice's issue open.
+5. **API contract doc checked** — if the slice added or changed any endpoint, verify `docs/05-api-contract.md` matches the implementation exactly (field names, types, HTTP verbs, response shapes). Fix any drift before closing.
+6. **Shared types checked** — if the slice touched `packages/shared`, confirm `packages/shared/src/index.ts` re-exports everything the API and mobile need.
+
+**These steps are not optional.** A slice whose GitHub issue is still open or whose entry is missing from `docs/08-implementation-slices.md` is not done, regardless of whether the code merged.
+
+---
+
 ## Commands
 
 ### Root (runs all workspaces via Turborepo)

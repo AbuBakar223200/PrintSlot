@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RegisterDeviceDto } from './dto/register-device.dto';
@@ -48,6 +48,25 @@ export class UsersService {
       deviceId: device.deviceId,
       updatedAt: device.updatedAt.toISOString(),
     };
+  }
+
+  async removeDevice(
+    deviceId: string,
+    userId: string,
+  ): Promise<{ success: true }> {
+    const device = await this.prisma.userDevice.findUnique({
+      where: { userId_deviceId: { userId, deviceId } },
+    });
+
+    if (!device) {
+      throw new NotFoundException(`Device not found`);
+    }
+
+    await this.prisma.userDevice.delete({
+      where: { userId_deviceId: { userId, deviceId } },
+    });
+
+    return { success: true };
   }
 
   private mapToSharedUser(prismaUser: {

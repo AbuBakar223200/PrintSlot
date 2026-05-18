@@ -38,7 +38,7 @@
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
 | PATCH | `/users/me` | Yes | Any | `{ name?, phone?, language?: EN\|BN }` | `User` |
-| PATCH | `/users/me/device` | Yes | Any | `{ deviceId: string, expoPushToken: string }` | `UserDevice` (upsert by deviceId) |
+| PATCH | `/users/me/device` | Yes | Any | `{ deviceId: string, token: string }` | `UserDevice` (upsert by deviceId) |
 | DELETE | `/users/me/device/:deviceId` | Yes | Any | — | `{ success: true }` |
 
 ---
