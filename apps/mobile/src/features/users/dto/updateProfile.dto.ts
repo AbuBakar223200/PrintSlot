@@ -14,13 +14,12 @@ import { z } from 'zod';
 export const UpdateProfileSchema = z
   .object({
     name: z.string().trim().min(1, 'Name is required').max(100, 'Name is too long'),
-    phone: z
-      .string()
-      .trim()
-      .max(20, 'Phone is too long')
-      .optional()
-      .or(z.literal('').transform(() => undefined)),
+    phone: z.string().trim().max(20, 'Phone is too long').optional(),
   })
   .strict();
+
+// Empty phone is allowed: the server (Slice 02) trims and interprets
+// the resulting empty string as null, so no client-side coercion is
+// needed here.
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
