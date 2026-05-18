@@ -5,3 +5,22 @@ export { ColorMode, PaperSize, Orientation } from './constants/printConfig';
 
 // Types
 export type { User, UserDevice, AuthResponse, RegisterInput, LoginInput } from './types/user.types';
+
+// Contracts
+export {
+  REGISTERABLE_ROLES,
+  REGISTER_PASSWORD_MIN_LENGTH,
+  REGISTER_NAME_MAX_LENGTH,
+  isRegisterableRole,
+  validateRegisterInput,
+} from './contracts/auth.contract';
+export type {
+  RegisterableRole,
+  RegisterInputValidationResult,
+} from './contracts/auth.contract';
+export type {
+  PriceableOrderFileInput,
+  ShopPriceRates,
+  PricedOrderFile,
+  OrderPriceResult,
+} from './contracts/order-pricing.contract';
