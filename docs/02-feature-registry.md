@@ -1,6 +1,7 @@
 # Feature Registry
 
 > See also: [`CONTEXT.md`](../CONTEXT.md) — feature ownership table maps each feature to its mobile path and API module path.
+> Slice implementation status lives in [`docs/08-implementation-slices.md`](./08-implementation-slices.md). Slice 01 / GitHub issue #9 is closed and must not be reimplemented.
 
 **Priority legend:** P0 = must ship v1 · P1 = ship v1 but non-blocking · P2 = post-launch
 
