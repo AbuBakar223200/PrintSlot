@@ -4,6 +4,8 @@
 > Rules sourced from `vercel-react-native-skills` and adapted for the PrintSlot stack.
 > Stack: **Expo Router · React Native Reanimated · TanStack Query · Zustand · FlashList · expo-image**
 
+> **Git:** Always cut branches from `origin/development`, not `main`. PRs target `development`. Branch format: `ihm/<type>/<desc>`. See `CLAUDE.md` for full workflow.
+
 ---
 
 ## Table of Contents
