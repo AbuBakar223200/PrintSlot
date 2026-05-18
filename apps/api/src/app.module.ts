@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AppController } from './app.controller';
@@ -24,6 +25,7 @@ import { AppController } from './app.controller';
     }),
     PrismaModule,
     AuthModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [
