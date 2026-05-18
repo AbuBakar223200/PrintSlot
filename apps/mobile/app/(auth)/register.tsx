@@ -14,7 +14,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Input } from '@/components/ui/Input';
 import { Button, ButtonText } from '@/components/ui/Button';
 import { useRegister } from '@/features/auth/hooks/useAuth';
-import { Role } from '@printslot/shared';
+import { Role, validateRegisterInput } from '@printslot/shared';
 import { colors, spacing, borderRadius, typography } from '@/config/theme';
 
 /**
@@ -42,23 +42,14 @@ export default function RegisterScreen() {
   const { mutate: register, isPending, error, reset } = useRegister();
 
   const validate = useCallback((): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!name.trim()) {
-      errors.name = 'Name is required';
-    }
-
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = 'Enter a valid email address';
-    }
-
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
+    const validation = validateRegisterInput({
+      name,
+      email,
+      password,
+      phone: phone.trim() || undefined,
+      role: selectedRole,
+    });
+    const errors: Record<string, string> = { ...validation.errors };
 
     if (password !== confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
@@ -66,7 +57,7 @@ export default function RegisterScreen() {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [name, email, password, confirmPassword]);
+  }, [name, email, phone, password, confirmPassword, selectedRole]);
 
   const handleRegister = useCallback(() => {
     if (!validate()) return;

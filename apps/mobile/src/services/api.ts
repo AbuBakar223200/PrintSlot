@@ -1,4 +1,5 @@
 import env from '@/config/env';
+import { authSession } from '@/features/auth/session/authSession';
 
 /**
  * Standard API response shape from the NestJS backend.
@@ -19,21 +20,10 @@ export interface ApiError {
   statusCode: number;
 }
 
-/** Token getter — set by useAuthStore after login */
-let getAccessToken: (() => string | null) | null = null;
-
-/**
- * Register the token getter function.
- * Called once from useAuthStore initialization.
- */
-export function setTokenGetter(getter: () => string | null): void {
-  getAccessToken = getter;
-}
-
 /**
  * Typed fetch wrapper for the PrintSlot API.
  *
- * - Automatically attaches JWT from auth store
+ * - Automatically attaches JWT from auth session
  * - Unwraps the standard { data, message, statusCode } envelope
  * - Throws structured errors on non-2xx responses
  */
@@ -41,7 +31,7 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getAccessToken?.();
+  const token = authSession.getAccessToken();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -49,7 +39,7 @@ export async function apiFetch<T>(
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const url = `${env.API_URL}${path}`;
