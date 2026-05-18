@@ -4,6 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Git Workflow
+
+```
+main          ← production-stable, never commit directly
+development   ← integration branch, all feature PRs merge here
+ihm/<type>/<desc>  ← feature branches, always cut from development
+```
+
+**Rules:**
+- Always `git checkout -b ihm/<type>/<desc> origin/development`
+- PRs target `development`, not `main`
+- Never branch from `main` for dev work
+- `main` only receives merges from `development` at release time
+
+---
+
 ## Branch Naming
 
 Every branch **must** follow this format:

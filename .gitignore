@@ -20,8 +20,8 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 
-# Prisma
-apps/api/prisma/migrations/
+# Prisma — migrations MUST be tracked (deployed via prisma migrate deploy)
+# apps/api/prisma/migrations/  ← do NOT ignore
 
 # Expo
 *.jks

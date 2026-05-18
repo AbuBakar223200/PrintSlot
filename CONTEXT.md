@@ -77,6 +77,24 @@ PrintSlot digitizes the print shop experience. Customers upload documents, confi
 
 ---
 
+## Git Workflow
+
+```
+main          ← production-stable, never branch from here for dev work
+development   ← integration branch, base for all feature branches
+ihm/<type>/<desc>  ← feature branches
+```
+
+| Action | Command |
+|---|---|
+| Start new feature | `git checkout -b ihm/<type>/<desc> origin/development` |
+| PR target | `development` (never `main`) |
+| Release | `development` → `main` only at release time |
+
+**Branch naming:** `ihm/<type>/<kebab-case-description>` — see `CLAUDE.md` for full rules.
+
+---
+
 ## Naming Conventions
 
 - Files: `camelCase.ts` (services, hooks, utils)
