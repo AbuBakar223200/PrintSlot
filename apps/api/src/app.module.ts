@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { UsersModule } from './modules/users/users.module';
 import { AppController } from './app.controller';
 
 /**
@@ -25,6 +26,7 @@ import { AppController } from './app.controller';
     }),
     PrismaModule,
     AuthModule,
+    UsersModule,
     OrdersModule,
   ],
   controllers: [AppController],
