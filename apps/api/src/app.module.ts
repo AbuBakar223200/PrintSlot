@@ -1,0 +1,38 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+
+/**
+ * Root application module.
+ *
+ * Global providers:
+ * - ConfigModule: reads .env
+ * - PrismaModule: global DB access
+ * - HttpExceptionFilter: wraps errors → { data: null, message, statusCode }
+ * - ResponseInterceptor: wraps success → { data, message: "ok", statusCode }
+ */
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    PrismaModule,
+    AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilterGlobal,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
+})
+export class AppModule {}
