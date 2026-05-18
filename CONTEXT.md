@@ -17,9 +17,10 @@ Use this to know which file to open before doing any work.
 | Every API endpoint, request/response shape, WebSocket events | `docs/05-api-contract.md` |
 | High-level architecture, ADRs, module folder layout | `docs/TECHNICAL_DESIGN.md` |
 | Recent architecture handoff notes for future agents | `docs/architecture-handoff.md` |
-| What "done" looks like (20 criteria) | `docs/06-definition-of-done.md` |
+| What "done" looks like (21 criteria) | `docs/06-definition-of-done.md` |
 | Coding rules, patterns, examples for NestJS + React Native | `docs/CODING_STANDARDS.md` |
 | Known risks and mitigations | `docs/07-risk-register.md` |
+| Implementation slice status and GitHub issue mapping | `docs/08-implementation-slices.md` |
 | What is explicitly NOT being built in v1 | `docs/PRD.md` §4 (Non-Goals) — summary below |
 
 ---
@@ -74,6 +75,9 @@ PrintSlot digitizes the print shop experience. Customers upload documents, confi
 
 8. **Push tokens live in `UserDevice`, never on `User`.**
    Dispatch fans out to all `UserDevice` rows for a user. Delete row on `DeviceNotRegistered`.
+
+9. **Reuse before writing new code.**
+   Before adding any function, component, hook, service, DTO, type, utility, or test helper, search the repo for an existing equivalent. Reuse, extend, or move existing code instead of duplicating it. If duplication is unavoidable, document the reason in the PR/commit notes.
 
 ---
 

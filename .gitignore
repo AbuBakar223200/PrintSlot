@@ -37,5 +37,10 @@ coverage/
 # Turborepo
 .turbo/
 
+# OMX runtime state
+.omx/logs/
+.omx/state/
+.omx/metrics.json
+
 # Generated
 apps/api/prisma/generated/

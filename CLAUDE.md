@@ -74,7 +74,14 @@ Before touching any file, read these in order:
 1. **`CONTEXT.md`** — domain language, golden rules, feature ownership table, all business rules. This is the law.
 2. **`docs/04-data-model.md`** — every entity, relation, constraint, pricing formula, ETA algorithm.
 3. **`docs/05-api-contract.md`** — every endpoint, request/response shape, WebSocket events, error codes.
-4. **`docs/06-definition-of-done.md`** — 20 criteria every feature must satisfy before it is done.
+4. **`docs/06-definition-of-done.md`** — 21 criteria every feature must satisfy before it is done.
+5. **`docs/08-implementation-slices.md`** — slice-to-issue status. Closed slices must not be reimplemented.
+
+---
+
+## Strict Reuse Rule
+
+Before adding any new function, component, hook, service, DTO, type, utility, or test helper, search the repository for an existing equivalent. Reuse, extend, or move existing code instead of duplicating it. If duplication is unavoidable, document the reason in the PR/commit notes.
 
 ---
 
