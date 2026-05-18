@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
-import { setTokenGetter } from '@/services/api';
 import type { User } from '@printslot/shared';
-import { type Role } from '@printslot/shared';
 
 /**
  * Zustand auth store — UI state only (session, user, role).
@@ -84,13 +82,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       onRehydrateStorage: () => {
         return (state) => {
           state?.setHydrated();
-          // Register the token getter so apiFetch can attach JWT
-          setTokenGetter(() => state?.accessToken ?? null);
         };
       },
     },
   ),
 );
-
-// Register token getter immediately for non-persisted usage
-setTokenGetter(() => useAuthStore.getState().accessToken);

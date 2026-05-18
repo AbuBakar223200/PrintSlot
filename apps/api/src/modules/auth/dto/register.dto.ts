@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  REGISTERABLE_ROLES,
+  REGISTER_NAME_MAX_LENGTH,
+  REGISTER_PASSWORD_MIN_LENGTH,
+} from '@printslot/shared';
 
 /**
  * Zod schema for POST /auth/register.
@@ -8,10 +13,18 @@ import { z } from 'zod';
  */
 export const RegisterSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  password: z
+    .string()
+    .min(
+      REGISTER_PASSWORD_MIN_LENGTH,
+      `Password must be at least ${REGISTER_PASSWORD_MIN_LENGTH} characters`,
+    ),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(REGISTER_NAME_MAX_LENGTH, 'Name too long'),
   phone: z.string().optional(),
-  role: z.enum(['CUSTOMER', 'SHOP_OWNER'], {
+  role: z.enum(REGISTERABLE_ROLES, {
     errorMap: () => ({ message: 'Role must be CUSTOMER or SHOP_OWNER' }),
   }),
 });
