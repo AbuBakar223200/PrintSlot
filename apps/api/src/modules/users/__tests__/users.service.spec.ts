@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 
@@ -21,6 +22,8 @@ const mockPrisma = {
   },
   userDevice: {
     upsert: jest.fn(),
+    findUnique: jest.fn(),
+    delete: jest.fn(),
   },
 };
 
@@ -151,6 +154,33 @@ describe('UsersService', () => {
         create: { userId: 'user-1', token: 'new-token', deviceId: 'D1' },
       });
       expect(result.deviceId).toBe('D1');
+    });
+  });
+
+  describe('removeDevice', () => {
+    it('deletes the device and returns { success: true } when it exists for this user', async () => {
+      const mockDevice = { id: 'dev-1', userId: 'user-1', deviceId: 'D1', token: 'tok', updatedAt: new Date() };
+      mockPrisma.userDevice.findUnique.mockResolvedValue(mockDevice);
+      mockPrisma.userDevice.delete.mockResolvedValue(mockDevice);
+
+      const result = await service.removeDevice('D1', 'user-1');
+
+      expect(mockPrisma.userDevice.findUnique).toHaveBeenCalledWith({
+        where: { userId_deviceId: { userId: 'user-1', deviceId: 'D1' } },
+      });
+      expect(mockPrisma.userDevice.delete).toHaveBeenCalledWith({
+        where: { userId_deviceId: { userId: 'user-1', deviceId: 'D1' } },
+      });
+      expect(result).toEqual({ success: true });
+    });
+
+    it('throws NotFoundException when device does not exist for this user', async () => {
+      mockPrisma.userDevice.findUnique.mockResolvedValue(null);
+
+      await expect(service.removeDevice('no-such-device', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrisma.userDevice.delete).not.toHaveBeenCalled();
     });
   });
 });

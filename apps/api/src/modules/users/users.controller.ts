@@ -1,4 +1,4 @@
-import { Controller, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserSchema, UpdateUserDto } from './dto/update-user.dto';
 import {
@@ -30,5 +30,14 @@ export class UsersController {
     @CurrentUser() user: User,
   ): Promise<Pick<UserDevice, 'id' | 'deviceId' | 'updatedAt'>> {
     return this.usersService.registerDevice(dto, user.id);
+  }
+
+  @Delete('me/device/:deviceId')
+  @UseGuards(JwtAuthGuard)
+  async removeDevice(
+    @Param('deviceId') deviceId: string,
+    @CurrentUser() user: User,
+  ): Promise<{ success: true }> {
+    return this.usersService.removeDevice(deviceId, user.id);
   }
 }

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, UnauthorizedException } from '@nestjs/common';
+import { INestApplication, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import request from 'supertest';
 import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
@@ -26,6 +26,7 @@ const mockUsersService = {
     deviceId: 'D1',
     updatedAt: '2024-01-01T00:00:00.000Z',
   }),
+  removeDevice: jest.fn().mockResolvedValue({ success: true }),
 };
 
 describe('UsersController', () => {
@@ -58,6 +59,7 @@ describe('UsersController', () => {
         deviceId: 'D1',
         updatedAt: '2024-01-01T00:00:00.000Z',
       });
+      mockUsersService.removeDevice.mockResolvedValue({ success: true });
     });
 
     afterEach(async () => {
@@ -105,6 +107,25 @@ describe('UsersController', () => {
         statusCode: 200,
       });
     });
+
+    it('DELETE /users/me/device/:deviceId returns { success: true } envelope', async () => {
+      const res = await request(app.getHttpServer()).delete('/users/me/device/D1');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        data: { success: true },
+        message: 'ok',
+        statusCode: 200,
+      });
+    });
+
+    it('DELETE /users/me/device/:deviceId returns 404 when device not found', async () => {
+      mockUsersService.removeDevice.mockRejectedValueOnce(new NotFoundException('Device not found'));
+
+      const res = await request(app.getHttpServer()).delete('/users/me/device/no-such-device');
+
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('without authentication', () => {
@@ -140,6 +161,12 @@ describe('UsersController', () => {
       const res = await request(app.getHttpServer())
         .patch('/users/me/device')
         .send({ token: 'tok', deviceId: 'D1' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('DELETE /users/me/device/:deviceId without JWT returns 401', async () => {
+      const res = await request(app.getHttpServer()).delete('/users/me/device/D1');
 
       expect(res.status).toBe(401);
     });
