@@ -33,6 +33,17 @@ function wrapper(client: QueryClient) {
     React.createElement(QueryClientProvider, { client }, children);
 }
 
+function createTestClient() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: 0, gcTime: Infinity },
+      mutations: { retry: 0, gcTime: Infinity },
+    },
+  });
+  jest.spyOn(client, 'invalidateQueries').mockResolvedValue(undefined as never);
+  return client;
+}
+
 beforeEach(() => {
   mockUpdateProfile.mockReset();
   useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false, isHydrated: true });
@@ -41,7 +52,7 @@ beforeEach(() => {
 describe('useUpdateProfile', () => {
   it('fires PATCH /users/me via usersApi.updateProfile', async () => {
     mockUpdateProfile.mockResolvedValueOnce({ id: 'u1', name: 'Jane' });
-    const client = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
+    const client = createTestClient();
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: wrapper(client) });
 
     await act(async () => {
@@ -53,7 +64,7 @@ describe('useUpdateProfile', () => {
 
   it('calls authStore.updateUser with the returned user on success', async () => {
     mockUpdateProfile.mockResolvedValueOnce({ id: 'u1', name: 'Jane' });
-    const client = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
+    const client = createTestClient();
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: wrapper(client) });
 
     await act(async () => {
@@ -67,8 +78,8 @@ describe('useUpdateProfile', () => {
 
   it('invalidates the [auth, me] query on success', async () => {
     mockUpdateProfile.mockResolvedValueOnce({ id: 'u1', name: 'Jane' });
-    const client = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
-    const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
+    const client = createTestClient();
+    const invalidateSpy = client.invalidateQueries as jest.Mock;
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: wrapper(client) });
 
     await act(async () => {
@@ -83,7 +94,7 @@ describe('useUpdateProfile', () => {
     useAuthStore.setState({ user: startingUser as never, isAuthenticated: true });
     mockUpdateProfile.mockRejectedValueOnce(new Error('Boom'));
 
-    const client = new QueryClient({ defaultOptions: { mutations: { retry: 0 } } });
+    const client = createTestClient();
     const { result } = renderHook(() => useUpdateProfile(), { wrapper: wrapper(client) });
 
     await act(async () => {
@@ -91,6 +102,8 @@ describe('useUpdateProfile', () => {
     });
 
     expect(useAuthStore.getState().user).toEqual(startingUser);
-    expect(result.current.error).toBeInstanceOf(Error);
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error);
+    });
   });
 });

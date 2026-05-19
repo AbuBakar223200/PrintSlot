@@ -9,6 +9,7 @@ import { getDeviceId } from '../services/deviceId';
 const REGISTRATION_CACHE_KEY = 'printslot-last-device-registration';
 
 interface CachedRegistration {
+  userId: string;
   token: string;
   deviceId: string;
 }
@@ -50,17 +51,19 @@ async function fetchExpoPushToken(): Promise<string> {
  * Exported for tests. Side-effects only; throws on any failure so the
  * caller can decide whether to swallow.
  */
-export async function registerDeviceOnce(): Promise<void> {
+export async function registerDeviceOnce(userId: string): Promise<void> {
   const granted = await ensurePermission();
   if (!granted) return;
 
   const [token, deviceId] = await Promise.all([fetchExpoPushToken(), getDeviceId()]);
 
   const cached = await readCache();
-  if (cached && cached.token === token && cached.deviceId === deviceId) return;
+  if (cached && cached.userId === userId && cached.token === token && cached.deviceId === deviceId) {
+    return;
+  }
 
   await usersApi.registerDevice({ token, deviceId });
-  await writeCache({ token, deviceId });
+  await writeCache({ userId, token, deviceId });
 }
 
 /**
@@ -84,7 +87,7 @@ export function useDeviceRegistration(): void {
     if (!isHydrated || !isAuthenticated || !userId) return;
     if (ranForRef.current === userId) return;
     ranForRef.current = userId;
-    registerDeviceOnce().catch((err) => {
+    registerDeviceOnce(userId).catch((err) => {
       console.warn('[device-registration]', err);
     });
   }, [isHydrated, isAuthenticated, userId]);
