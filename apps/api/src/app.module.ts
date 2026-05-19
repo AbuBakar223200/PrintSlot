@@ -9,6 +9,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { UsersModule } from './modules/users/users.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AppController } from './app.controller';
+import { ShopsModule } from './modules/shops/shops.module';
 
 /**
  * Root application module.
@@ -30,6 +31,7 @@ import { AppController } from './app.controller';
     UsersModule,
     OrdersModule,
     NotificationsModule,
+    ShopsModule,
   ],
   controllers: [AppController],
   providers: [

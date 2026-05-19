@@ -25,11 +25,11 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/auth/register` | No | Public | `{ email, password, name, phone?, role: CUSTOMER\|SHOP_OWNER }` | `{ user: User, accessToken: string }` |
+| POST | `/auth/register` | No | Public | `{ email, password, name, phone?, role: CUSTOMER\|STAFF\|SHOP_OWNER }` | `{ user: User, accessToken: string }` |
 | POST | `/auth/login` | No | Public | `{ email, password }` | `{ user: User, accessToken: string }` |
 | GET | `/auth/me` | Yes | Any | — | `User` |
 
-> Platform Admin and Staff accounts created by Platform Admin / Shop Owner only — not via public register.
+> Platform Admin accounts are seeded or created by privileged actors — not via public register.
 
 ---
 

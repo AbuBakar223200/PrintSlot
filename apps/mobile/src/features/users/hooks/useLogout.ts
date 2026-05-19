@@ -24,12 +24,22 @@ export function useLogout(): () => Promise<void> {
   const clearSession = useAuthStore((s) => s.clearSession);
 
   return useCallback(async () => {
+    let hasRegisteredDevice = false;
     try {
-      const deviceId = await getDeviceId();
-      await usersApi.unregisterDevice(deviceId);
-    } catch (err) {
-      console.warn('[logout] device unregistration failed (non-fatal)', err);
+      hasRegisteredDevice = Boolean(await SecureStore.getItemAsync(REGISTRATION_CACHE_KEY));
+    } catch {
+      /* cache miss is fine */
     }
+
+    if (hasRegisteredDevice) {
+      try {
+        const deviceId = await getDeviceId();
+        await usersApi.unregisterDevice(deviceId);
+      } catch (err) {
+        console.warn('[logout] device unregistration failed (non-fatal)', err);
+      }
+    }
+
     try {
       await SecureStore.deleteItemAsync(REGISTRATION_CACHE_KEY);
     } catch {

@@ -1,11 +1,11 @@
-import { Stack } from 'expo-router';
+import { Role } from '@printslot/shared';
+import { RoleProtectedStack } from '@/features/auth/components/RoleProtectedStack';
 
 export default function AdminLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="shops" />
-      <Stack.Screen name="profile" />
-      <Stack.Screen name="staff" />
-    </Stack>
+    <RoleProtectedStack
+      requiredRole={Role.PLATFORM_ADMIN}
+      screenOptions={{ headerShown: false }}
+    />
   );
 }

@@ -1,12 +1,11 @@
-import { Stack } from 'expo-router';
+import { Role } from '@printslot/shared';
+import { RoleProtectedStack } from '@/features/auth/components/RoleProtectedStack';
 
 export default function StaffLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="profile" />
-      <Stack.Screen name="jobs/index" />
-      <Stack.Screen name="jobs/[jobId]" />
-    </Stack>
+    <RoleProtectedStack
+      requiredRole={Role.STAFF}
+      screenOptions={{ headerShown: false }}
+    />
   );
 }
