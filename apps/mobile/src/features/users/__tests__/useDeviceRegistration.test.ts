@@ -22,10 +22,18 @@ jest.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: jest.fn(),
 }));
 
-jest.mock('expo-constants', () => ({
-  __esModule: true,
-  default: { expoConfig: { extra: {} }, easConfig: undefined },
-}));
+jest.mock('expo-constants', () => {
+  const constants = {
+    expoConfig: { extra: { eas: { projectId: '11111111-1111-4111-8111-111111111111' } } },
+    easConfig: undefined,
+  };
+
+  return {
+    __esModule: true,
+    default: constants,
+    __mockConstants: constants,
+  };
+});
 
 jest.mock('../services/usersApi', () => ({
   usersApi: { registerDevice: jest.fn() },
@@ -45,11 +53,18 @@ const SecureStore = require('expo-secure-store') as {
   getItemAsync: jest.Mock;
   setItemAsync: jest.Mock;
 };
+const Constants = require('expo-constants').__mockConstants as {
+  expoConfig: { extra: { eas?: { projectId?: string } } };
+  easConfig?: { projectId?: string };
+};
 const { usersApi } = require('../services/usersApi') as {
   usersApi: { registerDevice: jest.Mock };
 };
 
 beforeEach(() => {
+  Constants.expoConfig.extra.eas = { projectId: '11111111-1111-4111-8111-111111111111' };
+  Constants.easConfig = undefined;
+  delete process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
   SecureStore.__store.clear();
   Notifications.getPermissionsAsync.mockReset();
   Notifications.requestPermissionsAsync.mockReset();
@@ -69,6 +84,9 @@ describe('registerDeviceOnce', () => {
     expect(usersApi.registerDevice).toHaveBeenCalledWith({
       token: 'ExponentPushToken[abc]',
       deviceId: 'dev-fixed-1',
+    });
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledWith({
+      projectId: '11111111-1111-4111-8111-111111111111',
     });
     const cached = SecureStore.__store.get('printslot-last-device-registration');
     expect(cached && JSON.parse(cached)).toEqual({
@@ -158,6 +176,26 @@ describe('registerDeviceOnce', () => {
 
     await registerDeviceOnce('u1');
 
+    expect(usersApi.registerDevice).not.toHaveBeenCalled();
+  });
+
+  it('skips registration when no Expo project id is configured', async () => {
+    Constants.expoConfig.extra.eas = undefined;
+    Notifications.getPermissionsAsync.mockResolvedValueOnce({ granted: true, canAskAgain: true });
+
+    await registerDeviceOnce('u1');
+
+    expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
+    expect(usersApi.registerDevice).not.toHaveBeenCalled();
+  });
+
+  it('skips registration when the Expo project id is not a UUID', async () => {
+    Constants.expoConfig.extra.eas = { projectId: 'dummy-project-id-for-local-dev' };
+    Notifications.getPermissionsAsync.mockResolvedValueOnce({ granted: true, canAskAgain: true });
+
+    await registerDeviceOnce('u1');
+
+    expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
     expect(usersApi.registerDevice).not.toHaveBeenCalled();
   });
 });

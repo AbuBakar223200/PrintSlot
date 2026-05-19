@@ -7,6 +7,7 @@ import { usersApi } from '../services/usersApi';
 import { getDeviceId } from '../services/deviceId';
 
 const REGISTRATION_CACHE_KEY = 'printslot-last-device-registration';
+const EXPO_PROJECT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface CachedRegistration {
   userId: string;
@@ -36,11 +37,23 @@ async function ensurePermission(): Promise<boolean> {
   return requested.granted;
 }
 
-async function fetchExpoPushToken(): Promise<string> {
+function getExpoProjectId(): string | null {
   const projectId =
     (Constants.expoConfig?.extra?.eas as { projectId?: string } | undefined)?.projectId
     ?? (Constants.easConfig as { projectId?: string } | undefined)?.projectId
-    ?? 'dummy-project-id-for-local-dev';
+    ?? process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+
+  if (!projectId || !EXPO_PROJECT_ID_PATTERN.test(projectId)) {
+    return null;
+  }
+
+  return projectId;
+}
+
+async function fetchExpoPushToken(): Promise<string | null> {
+  const projectId = getExpoProjectId();
+  if (!projectId) return null;
+
   const result = await Notifications.getExpoPushTokenAsync({ projectId });
   return result.data;
 }
@@ -54,7 +67,10 @@ export async function registerDeviceOnce(userId: string): Promise<void> {
   const granted = await ensurePermission();
   if (!granted) return;
 
-  const [token, deviceId] = await Promise.all([fetchExpoPushToken(), getDeviceId()]);
+  const token = await fetchExpoPushToken();
+  if (!token) return;
+
+  const deviceId = await getDeviceId();
 
   const cached = await readCache();
   if (cached && cached.userId === userId && cached.token === token && cached.deviceId === deviceId) {

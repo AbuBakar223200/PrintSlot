@@ -7,9 +7,5 @@ import { Stack } from 'expo-router';
  * shop/, slots/, jobs/, analytics/ routes on top.
  */
 export default function OwnerLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="profile" />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
