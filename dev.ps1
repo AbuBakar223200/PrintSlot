@@ -38,9 +38,29 @@ function Stop-StartedProcesses {
     if ($process -and -not $process.HasExited) {
       Write-Host "Stopping pid $($process.Id)..." -ForegroundColor DarkYellow
       try {
-        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        taskkill.exe /PID $process.Id /T /F | Out-Null
       } catch {}
     }
+  }
+}
+
+function Stop-StaleDevProcesses {
+  $escapedRoot = [Regex]::Escape($Root)
+  $staleProcesses = Get-CimInstance Win32_Process -Filter "name = 'node.exe'" |
+    Where-Object {
+      $_.CommandLine -match $escapedRoot -and (
+        $_.CommandLine -match 'nest\.js.*start --watch' -or
+        $_.CommandLine -match 'expo\\bin\\cli.*start' -or
+        $_.CommandLine -match 'apps[\\/]+api[\\/]+dist.*main' -or
+        $_.CommandLine -match 'prisma\\build\\index\.js.*migrate (dev|status)'
+      )
+    }
+
+  foreach ($process in $staleProcesses) {
+    Write-Host "Stopping stale PrintSlot dev process pid $($process.ProcessId)..." -ForegroundColor DarkYellow
+    try {
+      taskkill.exe /PID $process.ProcessId /T /F | Out-Null
+    } catch {}
   }
 }
 
@@ -61,8 +81,13 @@ function Invoke-CheckedCommand([string]$Name, [string]$FilePath, [string[]]$Argu
 
 function Start-ManagedProcess([string]$Name, [string]$FilePath, [string[]]$Arguments, [string]$WorkingDirectory, [ConsoleColor]$Color) {
   $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-  $startInfo.FileName = $FilePath
-  $startInfo.Arguments = ($Arguments -join ' ')
+  if ($FilePath.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) {
+    $startInfo.FileName = 'cmd.exe'
+    $startInfo.Arguments = '/d /s /c "' + $FilePath + ' ' + ($Arguments -join ' ') + '"'
+  } else {
+    $startInfo.FileName = $FilePath
+    $startInfo.Arguments = ($Arguments -join ' ')
+  }
   $startInfo.WorkingDirectory = $WorkingDirectory
   $startInfo.RedirectStandardOutput = $true
   $startInfo.RedirectStandardError = $true
@@ -162,6 +187,9 @@ try {
   Assert-EnvFiles
   Write-Host 'Environment files found.' -ForegroundColor Green
 
+  Write-Step 'Stopping stale dev processes'
+  Stop-StaleDevProcesses
+
   Write-Step 'Checking dependencies'
   if (-not $SkipInstall -and ($Fresh -or -not (Test-Path (Join-Path $Root 'node_modules')))) {
     Invoke-CheckedCommand -Name 'install' -FilePath 'npm.cmd' -Arguments @('install') -WorkingDirectory $Root
@@ -170,6 +198,9 @@ try {
   }
 
   if (-not $SkipPrisma) {
+    Write-Step 'Building shared package'
+    Invoke-CheckedCommand -Name 'shared:build' -FilePath 'npm.cmd' -Arguments @('run', 'build', '--workspace=packages/shared') -WorkingDirectory $Root
+
     Write-Step 'Generating Prisma client'
     Invoke-CheckedCommand -Name 'prisma:generate' -FilePath 'npm.cmd' -Arguments @('run', 'prisma:generate', '--workspace=apps/api') -WorkingDirectory $Root
   }
@@ -178,14 +209,14 @@ try {
     Write-Step 'Applying Prisma migrations'
     Invoke-CheckedCommand -Name 'prisma:migrate' -FilePath 'npm.cmd' -Arguments @('run', 'prisma:migrate', '--workspace=apps/api') -WorkingDirectory $Root
   } else {
-    Write-Host 'Skipping migrations. Use .\dev.cmd --migrate to run them before startup.' -ForegroundColor DarkGray
+    Write-Host 'Skipping migrations. Use .\dev.cmd -Migrate to run them before startup.' -ForegroundColor DarkGray
   }
 
   if ($Seed) {
     Write-Step 'Seeding database'
     Invoke-CheckedCommand -Name 'prisma:seed' -FilePath 'npm.cmd' -Arguments @('run', 'prisma:seed', '--workspace=apps/api') -WorkingDirectory $Root
   } else {
-    Write-Host 'Skipping seed. Use .\dev.cmd --seed to seed before startup.' -ForegroundColor DarkGray
+    Write-Host 'Skipping seed. Use .\dev.cmd -Seed to seed before startup.' -ForegroundColor DarkGray
   }
 
   Write-Step 'Starting API'
@@ -213,7 +244,7 @@ try {
 
   Write-Host ''
   Write-Host 'Both processes are running.' -ForegroundColor Green
-  Write-Host 'Expo controls: press a for Android, w for web, or scan the QR code.' -ForegroundColor Cyan
+  Write-Host 'Expo controls: press a for Android, or scan the QR code with Expo Go.' -ForegroundColor Cyan
   Write-Host 'Press Ctrl+C here to stop API and mobile.' -ForegroundColor Cyan
   Write-Host ''
 
