@@ -36,7 +36,8 @@ async function main() {
 
   if (existing) {
     supabaseUserId = existing.id;
-    console.log(`✓ Platform Admin already in Supabase Auth (id=${supabaseUserId})`);
+    await supabase.auth.admin.updateUserById(supabaseUserId, { password: adminPassword });
+    console.log(`✓ Platform Admin already in Supabase Auth (id=${supabaseUserId}) - Password updated`);
   } else {
     const { data: created, error: createError } =
       await supabase.auth.admin.createUser({

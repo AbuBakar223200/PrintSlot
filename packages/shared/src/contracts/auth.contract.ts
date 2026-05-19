@@ -3,6 +3,7 @@ import type { RegisterInput } from '../types/user.types';
 
 export const REGISTERABLE_ROLES = [
   Role.CUSTOMER,
+  Role.STAFF,
   Role.SHOP_OWNER,
 ] as const;
 
@@ -46,7 +47,7 @@ export function validateRegisterInput(
   }
 
   if (!isRegisterableRole(input.role)) {
-    errors.role = 'Role must be CUSTOMER or SHOP_OWNER';
+    errors.role = 'Role must be CUSTOMER, STAFF, or SHOP_OWNER';
   }
 
   return {

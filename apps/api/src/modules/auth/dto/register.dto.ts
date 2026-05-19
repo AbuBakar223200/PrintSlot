@@ -8,8 +8,8 @@ import {
 /**
  * Zod schema for POST /auth/register.
  *
- * Only CUSTOMER and SHOP_OWNER can self-register.
- * STAFF is promoted by Shop Owner. PLATFORM_ADMIN is seeded.
+ * CUSTOMER, STAFF, and SHOP_OWNER can self-register.
+ * PLATFORM_ADMIN is seeded.
  */
 export const RegisterSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -25,7 +25,7 @@ export const RegisterSchema = z.object({
     .max(REGISTER_NAME_MAX_LENGTH, 'Name too long'),
   phone: z.string().optional(),
   role: z.enum(REGISTERABLE_ROLES, {
-    errorMap: () => ({ message: 'Role must be CUSTOMER or SHOP_OWNER' }),
+    errorMap: () => ({ message: 'Role must be CUSTOMER, STAFF, or SHOP_OWNER' }),
   }),
 });
 

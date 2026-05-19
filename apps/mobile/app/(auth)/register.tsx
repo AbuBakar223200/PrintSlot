@@ -22,7 +22,7 @@ import { colors, spacing, borderRadius, typography } from '@/config/theme';
  *
  * Flow:
  * 1. User enters name, email, phone (optional), password, confirm password
- * 2. Selects role: CUSTOMER (default) or SHOP_OWNER
+ * 2. Selects role: CUSTOMER (default), STAFF, or SHOP_OWNER
  * 3. Client-side validation → POST /auth/register via useRegister
  * 4. On success → useAuthStore.setSession → root layout redirects
  * 5. On error → inline error message
@@ -34,7 +34,8 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role.CUSTOMER | Role.SHOP_OWNER>(Role.CUSTOMER);
+  const [selectedRole, setSelectedRole] =
+    useState<Role.CUSTOMER | Role.STAFF | Role.SHOP_OWNER>(Role.CUSTOMER);
 
   // Client-side validation errors
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -159,6 +160,24 @@ export default function RegisterScreen() {
                     ]}
                   >
                     Shop Owner
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => setSelectedRole(Role.STAFF)}
+                  style={[
+                    styles.roleOption,
+                    selectedRole === Role.STAFF ? styles.roleOptionActive : null,
+                  ]}
+                >
+                  <Text style={styles.roleEmoji}>👥</Text>
+                  <Text
+                    style={[
+                      styles.roleLabel,
+                      selectedRole === Role.STAFF ? styles.roleLabelActive : null,
+                    ]}
+                  >
+                    Staff
                   </Text>
                 </Pressable>
               </View>
@@ -404,9 +423,12 @@ const styles = StyleSheet.create({
   roleSelector: {
     flexDirection: 'row',
     gap: spacing.md,
+    flexWrap: 'wrap',
   },
   roleOption: {
-    flex: 1,
+    flexBasis: '30%',
+    flexGrow: 1,
+    minWidth: 96,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
