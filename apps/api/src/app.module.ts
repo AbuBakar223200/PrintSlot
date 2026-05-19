@@ -8,6 +8,7 @@ import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filte
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { UsersModule } from './modules/users/users.module';
 import { AppController } from './app.controller';
+import { ShopsModule } from './modules/shops/shops.module';
 
 /**
  * Root application module.
@@ -28,6 +29,7 @@ import { AppController } from './app.controller';
     AuthModule,
     UsersModule,
     OrdersModule,
+    ShopsModule,
   ],
   controllers: [AppController],
   providers: [
