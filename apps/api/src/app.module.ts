@@ -7,6 +7,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { UsersModule } from './modules/users/users.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { AppController } from './app.controller';
 
 /**
@@ -28,6 +29,7 @@ import { AppController } from './app.controller';
     AuthModule,
     UsersModule,
     OrdersModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
