@@ -5,6 +5,7 @@ export { ColorMode, PaperSize, Orientation } from './constants/printConfig';
 
 // Types
 export type { User, UserDevice, AuthResponse, RegisterInput, LoginInput } from './types/user.types';
+export type { Shop, ShopListResult } from './types/shop.types';
 
 // Contracts
 export {
