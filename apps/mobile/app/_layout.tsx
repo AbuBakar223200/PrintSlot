@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { queryClient } from '@/services/queryClient';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useDeviceRegistration } from '@/features/users/hooks/useDeviceRegistration';
 import { colors } from '@/config/theme';
 
 /**
@@ -19,6 +20,11 @@ import { colors } from '@/config/theme';
  */
 export default function RootLayout() {
   const { isAuthenticated, isHydrated, user } = useAuthStore();
+
+  // Register this device's Expo push token once auth resolves.
+  // Hook is a no-op until isHydrated && isAuthenticated && user?.id is truthy;
+  // safe to invoke unconditionally at the top of the component.
+  useDeviceRegistration();
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -37,7 +43,10 @@ export default function RootLayout() {
         router.replace('/(staff)/jobs/' as never);
         break;
       case 'SHOP_OWNER':
-        router.replace('/(owner)/shop/' as never);
+        // Temporary target until Slice 30 (owner-route-group-mobile) builds
+        // out the owner shell at /(owner)/shop/. Slice 30 will flip this
+        // back to '/(owner)/shop/' when that route exists.
+        router.replace('/(owner)/profile' as never);
         break;
       case 'PLATFORM_ADMIN':
         router.replace('/(admin)/shops/' as never);

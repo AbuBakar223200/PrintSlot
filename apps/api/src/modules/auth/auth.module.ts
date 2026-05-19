@@ -1,18 +1,15 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { SupabaseJwtStrategy } from './strategies/supabase-jwt.strategy';
 
 /**
- * AuthModule — wires auth controller, service, and JWT strategy.
+ * AuthModule wires auth controller and service.
  *
- * PrismaService and ConfigService are global — no need to import.
+ * PrismaService and ConfigService are global, no import needed.
  */
 @Module({
-  imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
   controllers: [AuthController],
-  providers: [AuthService, SupabaseJwtStrategy],
-  exports: [AuthService, PassportModule],
+  providers: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}
