@@ -39,10 +39,9 @@ async function ensurePermission(): Promise<boolean> {
 async function fetchExpoPushToken(): Promise<string> {
   const projectId =
     (Constants.expoConfig?.extra?.eas as { projectId?: string } | undefined)?.projectId
-    ?? (Constants.easConfig as { projectId?: string } | undefined)?.projectId;
-  const result = projectId
-    ? await Notifications.getExpoPushTokenAsync({ projectId })
-    : await Notifications.getExpoPushTokenAsync();
+    ?? (Constants.easConfig as { projectId?: string } | undefined)?.projectId
+    ?? 'dummy-project-id-for-local-dev';
+  const result = await Notifications.getExpoPushTokenAsync({ projectId });
   return result.data;
 }
 

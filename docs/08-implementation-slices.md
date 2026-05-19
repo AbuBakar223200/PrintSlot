@@ -15,6 +15,7 @@
 |---|---:|---|---|---|
 | Slice 01 | #9 | Prisma initial migration + seed (Platform Admin + AppConfig + `order_number_seq`) | Closed | GitHub issue #9 is `CLOSED`; closed at 2026-05-18 14:01:11 UTC. |
 | Slice 02 | #10 | Users module — profile update + UserDevice registration (`PATCH /users/me`, `PATCH /users/me/device`, `DELETE /users/me/device/:deviceId`) | Closed | GitHub issue #10 closed; merged in PR #47 at 2026-05-18 20:30:49 UTC. |
+| Slice 03 | #49 | Mobile profile screen + push device registration on launch | Closed | Merged in PR #49 at 2026-05-19; local verification: mobile/API lint pass, mobile/API tests pass. |
 
 ## Agent Rules
 
