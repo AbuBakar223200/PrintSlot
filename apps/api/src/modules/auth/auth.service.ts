@@ -42,13 +42,17 @@ export class AuthService {
    * 2. Create mirror User row in our DB
    * 3. Return user + access token
    *
-   * Only CUSTOMER and SHOP_OWNER can self-register.
+   * CUSTOMER, STAFF, and SHOP_OWNER can self-register.
    */
   async register(dto: RegisterDto): Promise<AuthResponse> {
-    // Block STAFF and PLATFORM_ADMIN registration
-    if (dto.role !== 'CUSTOMER' && dto.role !== 'SHOP_OWNER') {
+    // Block PLATFORM_ADMIN registration
+    if (
+      dto.role !== 'CUSTOMER'
+      && dto.role !== 'STAFF'
+      && dto.role !== 'SHOP_OWNER'
+    ) {
       throw new BadRequestException(
-        'Only CUSTOMER and SHOP_OWNER roles can self-register',
+        'Only CUSTOMER, STAFF, and SHOP_OWNER roles can self-register',
       );
     }
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Stack } from 'expo-router';
+import { Role } from '@printslot/shared';
+import { RoleProtectedStack } from '@/features/auth/components/RoleProtectedStack';
 
 /**
  * (owner) route group — minimal scaffold added in Slice 03 to host
@@ -7,5 +7,10 @@ import { Stack } from 'expo-router';
  * shop/, slots/, jobs/, analytics/ routes on top.
  */
 export default function OwnerLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <RoleProtectedStack
+      requiredRole={Role.SHOP_OWNER}
+      screenOptions={{ headerShown: false }}
+    />
+  );
 }

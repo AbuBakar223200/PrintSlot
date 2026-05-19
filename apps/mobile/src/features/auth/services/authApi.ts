@@ -8,7 +8,7 @@ import type { AuthResponse, User, RegisterInput, LoginInput } from '@printslot/s
 export const authApi = {
   /**
    * POST /auth/register
-   * Only CUSTOMER and SHOP_OWNER can self-register.
+   * CUSTOMER, STAFF, and SHOP_OWNER can self-register.
    */
   register: (input: RegisterInput): Promise<AuthResponse> =>
     apiFetch<AuthResponse>('/auth/register', {

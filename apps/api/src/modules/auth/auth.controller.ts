@@ -22,7 +22,7 @@ export class AuthController {
   /**
    * POST /auth/register
    * Public — no auth required.
-   * Only CUSTOMER and SHOP_OWNER can self-register.
+   * CUSTOMER, STAFF, and SHOP_OWNER can self-register.
    */
   @Post('register')
   async register(

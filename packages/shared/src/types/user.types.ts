@@ -38,15 +38,15 @@ export interface AuthResponse {
 
 /**
  * Input for POST /auth/register.
- * Only CUSTOMER and SHOP_OWNER can self-register.
- * STAFF is promoted by Shop Owner. PLATFORM_ADMIN is seeded.
+ * CUSTOMER, STAFF, and SHOP_OWNER can self-register.
+ * PLATFORM_ADMIN is seeded.
  */
 export interface RegisterInput {
   email: string;
   password: string;
   name: string;
   phone?: string;
-  role: Role.CUSTOMER | Role.SHOP_OWNER;
+  role: Role.CUSTOMER | Role.STAFF | Role.SHOP_OWNER;
 }
 
 /**

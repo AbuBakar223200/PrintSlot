@@ -26,7 +26,7 @@ export interface RegisterInput {
     password: string;
     name: string;
     phone?: string;
-    role: Role.CUSTOMER | Role.SHOP_OWNER;
+    role: Role.CUSTOMER | Role.STAFF | Role.SHOP_OWNER;
 }
 export interface LoginInput {
     email: string;
