@@ -5,6 +5,10 @@ import { Button, ButtonText } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/config/theme';
 
 export default function CustomerHomeScreen() {
+  const openShops = useCallback(() => {
+    router.push('/(customer)/shops' as never);
+  }, []);
+
   const openProfile = useCallback(() => {
     router.push('/(customer)/profile' as never);
   }, []);
@@ -13,8 +17,11 @@ export default function CustomerHomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Customer Home</Text>
-        <Text style={styles.subtitle}>Profile is ready for Expo Go testing.</Text>
-        <Button onPress={openProfile} size="lg" testID="customer-profile-button">
+        <Text style={styles.subtitle}>Find a print shop or manage your profile.</Text>
+        <Button onPress={openShops} size="lg" testID="customer-shops-button">
+          <ButtonText>Browse Shops</ButtonText>
+        </Button>
+        <Button onPress={openProfile} variant="secondary" size="lg" testID="customer-profile-button">
           <ButtonText>Profile</ButtonText>
         </Button>
       </View>

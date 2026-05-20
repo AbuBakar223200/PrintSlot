@@ -108,7 +108,6 @@ export default function ProfileScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInUp.duration(600)} style={styles.header}>
