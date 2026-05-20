@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Button, ButtonText } from '@/components/ui/Button';
 import { colors, spacing, typography } from '@/config/theme';
@@ -10,7 +10,7 @@ export default function AdminShops() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Admin Shops Dashboard</Text>
         <Text style={styles.subtitle}>Welcome, Platform Admin!</Text>
@@ -18,7 +18,7 @@ export default function AdminShops() {
           <ButtonText>Profile</ButtonText>
         </Button>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

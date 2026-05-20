@@ -113,7 +113,6 @@ export default function ShopDetailScreen() {
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
         {/* Header card */}
