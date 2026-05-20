@@ -8,6 +8,7 @@ export type { User, UserDevice, AuthResponse, RegisterInput, LoginInput } from '
 export type { Shop, ShopListResult } from './types/shop.types';
 export type { ShopSlot, Slot, SlotTemplate } from './types/slot.types';
 export type { UploadedFile } from './types/upload.types';
+export type { PrintConfig } from './types/order.types';
 
 // Contracts
 export {
