@@ -53,8 +53,8 @@
 | PATCH | `/shops/:id` | Yes | SHOP_OWNER (own shop) | `{ name?, address?, phone?, colorRate?, bwRate?, a3Surcharge?, duplexDiscount? }` | `Shop` |
 | PATCH | `/shops/:id/status` | Yes | PLATFORM_ADMIN | `{ status: ACTIVE\|REJECTED\|SUSPENDED, rejectionReason? }` | `Shop` |
 | PATCH | `/shops/:id/resubmit` | Yes | SHOP_OWNER (own, status=REJECTED only — not SUSPENDED) | — | `Shop` (status → PENDING, rejectionReason cleared) |
-| GET | `/shops/:id/slots` | Yes | CUSTOMER | `?date=YYYY-MM-DD` | `ShopSlot[]` (isOpen=true, currentCount < maxOrders only) |
-| GET | `/shops/:id/slots/active` | Yes | CUSTOMER | — | `ShopSlot \| null` — returns current time window's open slot if one exists right now (BST). `null` = "Print Now" unavailable. |
+| GET | `/shops/:id/slots` | Yes | Any authenticated user | `?date=YYYY-MM-DD` | `Slot[]` (isOpen=true, currentCount < maxOrders, template not soft-deleted only) |
+| GET | `/shops/:id/slots/active` | No | Public | — | `Slot \| null` — returns current BST time window's open, non-full slot if one exists. `null` = "Print Now" unavailable. |
 
 ---
 
@@ -62,9 +62,9 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| GET | `/slots/templates` | Yes | PLATFORM_ADMIN | — | `SlotTemplate[]` |
-| POST | `/slots/templates` | Yes | PLATFORM_ADMIN | `{ startTime: "HH:MM", endTime: "HH:MM", durationMins }` | `SlotTemplate` |
-| PATCH | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | `{ startTime?, endTime?, durationMins? }` | `SlotTemplate` |
+| GET | `/slots/templates` | Yes | Any authenticated user | — | `SlotTemplate[]` excluding soft-deleted templates |
+| POST | `/slots/templates` | Yes | PLATFORM_ADMIN | `{ startTime: "HH:MM", endTime: "HH:MM" }` | `SlotTemplate` |
+| PATCH | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | `{ startTime?, endTime? }` | `SlotTemplate` |
 | DELETE | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | — | `{ success: true }` |
 
 ---
@@ -73,8 +73,7 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/shops/:id/slots` | Yes | SHOP_OWNER (own shop) | `{ templateId, date: "YYYY-MM-DD", isOpen, maxOrders }` | `ShopSlot` |
-| PATCH | `/shops/:id/slots/:slotId` | Yes | SHOP_OWNER (own shop) | `{ isOpen?, maxOrders? }` | `ShopSlot` |
+| POST | `/shops/:id/slots` | Yes | SHOP_OWNER (own shop) | `{ templateId, date: "YYYY-MM-DD", isOpen, maxOrders }` | `Slot` (upserts by shopId + templateId + date; does not change currentCount) |
 
 ---
 

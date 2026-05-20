@@ -25,3 +25,5 @@ export interface ShopSlot {
   currentCount: number;
   template?: SlotTemplate;
 }
+
+export type Slot = ShopSlot;

@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AppController } from './app.controller';
 import { ShopsModule } from './modules/shops/shops.module';
+import { SlotsModule } from './modules/slots/slots.module';
 
 /**
  * Root application module.
@@ -32,6 +33,7 @@ import { ShopsModule } from './modules/shops/shops.module';
     OrdersModule,
     NotificationsModule,
     ShopsModule,
+    SlotsModule,
   ],
   controllers: [AppController],
   providers: [
