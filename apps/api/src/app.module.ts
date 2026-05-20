@@ -8,6 +8,7 @@ import { HttpExceptionFilterGlobal } from './common/filters/http-exception.filte
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { UsersModule } from './modules/users/users.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { AppController } from './app.controller';
 import { ShopsModule } from './modules/shops/shops.module';
 import { SlotsModule } from './modules/slots/slots.module';
@@ -34,6 +35,7 @@ import { SlotsModule } from './modules/slots/slots.module';
     NotificationsModule,
     ShopsModule,
     SlotsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
