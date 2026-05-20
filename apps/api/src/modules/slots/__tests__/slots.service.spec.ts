@@ -222,6 +222,20 @@ describe('SlotsService', () => {
     await expect(service.getActiveSlot('shop-1')).resolves.toBeNull();
   });
 
+  it('getActiveSlot excludes closed slots from the active-slot query', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-05-20T03:10:00.000Z'));
+    mockPrisma.shopSlot.findMany.mockResolvedValue([]);
+
+    await expect(service.getActiveSlot('shop-1')).resolves.toBeNull();
+    expect(mockPrisma.shopSlot.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isOpen: true,
+        }),
+      }),
+    );
+  });
+
   it('getActiveSlot uses an exclusive endTime boundary', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-05-20T03:30:00.000Z'));
     mockPrisma.shopSlot.findMany.mockResolvedValue([]);
