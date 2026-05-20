@@ -30,8 +30,8 @@ export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post()
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.CUSTOMER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {

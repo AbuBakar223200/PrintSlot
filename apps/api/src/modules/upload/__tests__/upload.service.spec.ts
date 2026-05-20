@@ -64,7 +64,7 @@ describe('UploadService', () => {
 
     expect(mockUploadStream).toHaveBeenCalledWith(
       expect.objectContaining({
-        folder: 'printslot/pending/',
+        folder: 'printslot/pending/pdf/',
         resource_type: 'raw',
       }),
       expect.any(Function),
