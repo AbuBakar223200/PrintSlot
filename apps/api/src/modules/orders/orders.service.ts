@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { ColorMode, PaperSize, type OrderPriceResult } from '@printslot/shared';
 import { Prisma } from '@prisma/client';
@@ -18,6 +19,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import type { PreviewPriceDto } from './dto/preview-price.dto';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import { parsePageRange } from './utils/pageRange';
+import { OrdersGateway } from './orders.gateway';
 
 @Injectable()
 export class OrdersService {
@@ -30,6 +32,8 @@ export class OrdersService {
     private readonly notificationsService: NotificationsService,
     @Inject(CLOUDINARY_PROVIDER)
     private readonly cloudinary: any,
+    @Inject(forwardRef(() => OrdersGateway))
+    private readonly ordersGateway: OrdersGateway,
   ) {}
 
   /**
@@ -334,5 +338,131 @@ export class OrdersService {
 
   private roundDecimal(decimal: Prisma.Decimal): number {
     return Math.round(decimal.toNumber() * 100) / 100;
+  }
+
+  async getOrderWithSlotAndShop(orderId: string) {
+    return this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        slot: true,
+        shop: true,
+      },
+    });
+  }
+
+  async computeQueuePosition(orderIdOrOrder: string | any): Promise<number> {
+    let order = typeof orderIdOrOrder === 'string'
+      ? await this.getOrderWithSlotAndShop(orderIdOrOrder)
+      : orderIdOrOrder;
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (!order.slot) {
+      order = await this.getOrderWithSlotAndShop(order.id);
+    }
+
+    const count = await this.prisma.order.count({
+      where: {
+        shopId: order.shopId,
+        slot: { date: order.slot.date },
+        status: { in: ['QUEUED', 'PROCESSING'] },
+        createdAt: { lt: order.createdAt },
+      },
+    });
+
+    return count + 1;
+  }
+
+  async computeETA(orderIdOrOrder: string | any): Promise<number> {
+    let order = typeof orderIdOrOrder === 'string'
+      ? await this.getOrderWithSlotAndShop(orderIdOrOrder)
+      : orderIdOrOrder;
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (!order.slot || !order.shop) {
+      order = await this.getOrderWithSlotAndShop(order.id);
+    }
+
+    const shop = order.shop;
+
+    // 1. Fetch last 20 completed orders that have color pages or bw pages
+    const lastDone = await this.prisma.order.findMany({
+      where: {
+        shopId: shop.id,
+        status: { in: ['READY', 'COLLECTED'] },
+        OR: [
+          { colorPages: { gt: 0 } },
+          { bwPages: { gt: 0 } },
+        ],
+      },
+      orderBy: { readyAt: 'desc' },
+      take: 20,
+    });
+
+    const fallback = Number(shop.defaultProcessingMins) / 10;
+    let avgColorRate = fallback;
+    let avgBwRate = fallback;
+
+    if (lastDone.length >= 10) {
+      let totalColorMins = 0;
+      let totalColorPages = 0;
+      let totalBwMins = 0;
+      let totalBwPages = 0;
+      let validOrdersCount = 0;
+
+      for (const o of lastDone) {
+        if (!o.readyAt || !o.processingStartedAt) continue;
+        const totalPages = o.colorPages + o.bwPages;
+        if (totalPages === 0) continue;
+
+        const diffMins = (o.readyAt.getTime() - o.processingStartedAt.getTime()) / 60000;
+        validOrdersCount++;
+
+        if (o.colorPages > 0) {
+          const colorMins = diffMins * (o.colorPages / totalPages);
+          totalColorMins += colorMins;
+          totalColorPages += o.colorPages;
+        }
+
+        if (o.bwPages > 0) {
+          const bwMins = diffMins * (o.bwPages / totalPages);
+          totalBwMins += bwMins;
+          totalBwPages += o.bwPages;
+        }
+      }
+
+      if (validOrdersCount >= 10) {
+        if (totalColorPages > 0) {
+          avgColorRate = totalColorMins / totalColorPages;
+        }
+        if (totalBwPages > 0) {
+          avgBwRate = totalBwMins / totalBwPages;
+        }
+      }
+    }
+
+    // 2. Fetch orders ahead in queue
+    const ordersAhead = await this.prisma.order.findMany({
+      where: {
+        shopId: order.shopId,
+        slot: { date: order.slot.date },
+        status: { in: ['QUEUED', 'PROCESSING'] },
+        createdAt: { lt: order.createdAt },
+      },
+    });
+
+    // 3. Compute ETA in minutes
+    let etaMins = 0;
+    for (const o of ordersAhead) {
+      etaMins += o.colorPages * avgColorRate + o.bwPages * avgBwRate;
+    }
+    etaMins += order.colorPages * avgColorRate + order.bwPages * avgBwRate;
+
+    return Math.ceil(etaMins);
   }
 }
