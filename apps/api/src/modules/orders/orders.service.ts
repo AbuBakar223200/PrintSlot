@@ -6,15 +6,8 @@ import {
 import { ColorMode, PaperSize, type OrderPriceResult } from '@printslot/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { PreviewPriceDto } from './dto/preview-price.dto';
-
-type NumberLike = number | string | { toString(): string };
-
-interface PriceRates {
-  colorRate: NumberLike;
-  bwRate: NumberLike;
-  a3Surcharge: NumberLike;
-  duplexDiscount: NumberLike;
-}
+import { parsePageRange } from './utils/pageRange';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
@@ -37,7 +30,7 @@ export class OrdersService {
     }
 
     if (shop.status !== 'ACTIVE') {
-      throw new BadRequestException('Shop is not active');
+      throw new BadRequestException('Shop is not currently accepting orders.');
     }
 
     return this.calculatePrice(dto.files, shop);
@@ -45,115 +38,92 @@ export class OrdersService {
 
   calculatePrice(
     files: PreviewPriceDto['files'],
-    rates: PriceRates,
+    rates: {
+      colorRate: any;
+      bwRate: any;
+      a3Surcharge: any;
+      duplexDiscount: any;
+    },
   ): OrderPriceResult {
-    const colorRate = this.toNumber(rates.colorRate, 'colorRate');
-    const bwRate = this.toNumber(rates.bwRate, 'bwRate');
-    const a3Surcharge = this.toNumber(rates.a3Surcharge, 'a3Surcharge');
-    const duplexDiscount = this.toNumber(
-      rates.duplexDiscount,
-      'duplexDiscount',
-    );
+    const colorRate = new Prisma.Decimal(rates.colorRate.toString());
+    const bwRate = new Prisma.Decimal(rates.bwRate.toString());
+    const a3Surcharge = new Prisma.Decimal(rates.a3Surcharge.toString());
+    const duplexDiscount = new Prisma.Decimal(rates.duplexDiscount.toString());
 
     const pricedFiles = files.map((file) => {
-      const resolvedPages = this.resolvePages(
-        file.pageRange,
-        file.detectedPages,
-      );
-      const printedPages = resolvedPages * file.copies;
-      const rate = file.colorMode === ColorMode.COLOR ? colorRate : bwRate;
-      const base = printedPages * rate;
-      const surcharge =
-        file.paperSize === PaperSize.A3 ? printedPages * a3Surcharge : 0;
-      const body = file.duplex ? base * (1 - duplexDiscount) : base;
-      const subtotalPrice = this.roundCurrency(body + surcharge);
+      if (file.detectedPages <= 0) {
+        throw new BadRequestException('File has no pages');
+      }
 
+      // 1. Resolve pages using pageRange parser
+      let resolvedPages: number;
+      try {
+        const pagesList = parsePageRange(file.pageRange, file.detectedPages);
+        resolvedPages = file.pageRange ? pagesList.length : file.detectedPages;
+      } catch (e: any) {
+        throw new BadRequestException(e.message || 'Invalid page range');
+      }
+
+      if (resolvedPages <= 0) {
+        throw new BadRequestException('File has no resolved pages');
+      }
+
+      const totalPrintedPages = resolvedPages * file.copies;
+
+      // 2. Base rate lookup
+      const rate = file.colorMode === ColorMode.COLOR ? colorRate : bwRate;
+
+      // base = resolvedPages × copies × rate
+      const base = rate.mul(totalPrintedPages);
+
+      // surcharge = paperSize === 'A3' ? resolvedPages × copies × shop.a3Surcharge : 0
+      const surcharge =
+        file.paperSize === PaperSize.A3
+          ? a3Surcharge.mul(totalPrintedPages)
+          : new Prisma.Decimal(0);
+
+      // body = duplex ? base × (1 − shop.duplexDiscount) : base
+      const duplexMultiplier = new Prisma.Decimal(1).sub(duplexDiscount);
+      const body = file.duplex ? base.mul(duplexMultiplier) : base;
+
+      // subtotal = body + surcharge
+      const subtotalDecimal = body.add(surcharge);
+      const subtotalPrice = this.roundDecimal(subtotalDecimal);
+
+      const isColor = file.colorMode === ColorMode.COLOR;
       return {
         resolvedPages,
         subtotalPrice,
-        colorPages: file.colorMode === ColorMode.COLOR ? printedPages : 0,
-        bwPages: file.colorMode === ColorMode.BW ? printedPages : 0,
+        colorPages: isColor ? totalPrintedPages : 0,
+        bwPages: !isColor ? totalPrintedPages : 0,
       };
     });
 
+    const totalPrice = this.roundDecimal(
+      pricedFiles.reduce(
+        (sum, file) => sum.add(new Prisma.Decimal(file.subtotalPrice)),
+        new Prisma.Decimal(0),
+      ),
+    );
+
+    const totalPages = pricedFiles.reduce(
+      (sum, file) => sum + file.colorPages + file.bwPages,
+      0,
+    );
+
+    const colorPages = pricedFiles.reduce((sum, file) => sum + file.colorPages, 0);
+    const bwPages = pricedFiles.reduce((sum, file) => sum + file.bwPages, 0);
+
     return {
       files: pricedFiles,
-      totalPrice: this.roundCurrency(
-        pricedFiles.reduce((sum, file) => sum + file.subtotalPrice, 0),
-      ),
-      totalPages: pricedFiles.reduce(
-        (sum, file) => sum + file.colorPages + file.bwPages,
-        0,
-      ),
-      colorPages: pricedFiles.reduce((sum, file) => sum + file.colorPages, 0),
-      bwPages: pricedFiles.reduce((sum, file) => sum + file.bwPages, 0),
+      totalPrice,
+      totalPages,
+      colorPages,
+      bwPages,
     };
   }
 
-  private resolvePages(pageRange: string | undefined, detectedPages: number) {
-    if (!pageRange) {
-      return detectedPages;
-    }
-
-    const pages = new Set<number>();
-
-    for (const rawPart of pageRange.split(',')) {
-      const part = rawPart.trim();
-      if (!part) {
-        throw new BadRequestException('Invalid page range');
-      }
-
-      if (part.includes('-')) {
-        const bounds = part.split('-').map((value) => value.trim());
-        if (bounds.length !== 2) {
-          throw new BadRequestException('Invalid page range');
-        }
-
-        const start = this.parsePageNumber(bounds[0], detectedPages);
-        const end = this.parsePageNumber(bounds[1], detectedPages);
-
-        if (start > end) {
-          throw new BadRequestException('Invalid page range');
-        }
-
-        for (let page = start; page <= end; page += 1) {
-          pages.add(page);
-        }
-      } else {
-        pages.add(this.parsePageNumber(part, detectedPages));
-      }
-    }
-
-    if (pages.size === 0) {
-      throw new BadRequestException('Invalid page range');
-    }
-
-    return pages.size;
-  }
-
-  private parsePageNumber(value: string, detectedPages: number) {
-    if (!/^\d+$/.test(value)) {
-      throw new BadRequestException('Invalid page range');
-    }
-
-    const page = Number(value);
-    if (page < 1 || page > detectedPages) {
-      throw new BadRequestException('Page range exceeds detected pages');
-    }
-
-    return page;
-  }
-
-  private toNumber(value: NumberLike, field: string) {
-    const numericValue = Number(value.toString());
-    if (!Number.isFinite(numericValue)) {
-      throw new BadRequestException(`Invalid shop ${field}`);
-    }
-
-    return numericValue;
-  }
-
-  private roundCurrency(value: number) {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
+  private roundDecimal(decimal: Prisma.Decimal): number {
+    return Math.round(decimal.toNumber() * 100) / 100;
   }
 }
