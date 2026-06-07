@@ -93,7 +93,7 @@
 
 | Method | Path | Auth | Role | Request | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/upload` | Yes | CUSTOMER | `multipart/form-data { file }` | `{ url: string, fileName: string, fileSize: number, mimeType: string, detectedPages: number\|null }` |
+| POST | `/upload` | Yes | CUSTOMER | `multipart/form-data { file }` | `{ fileUrl: string, fileName: string, fileSize: number, mimeType: string, detectedPages: number\|null }` |
 
 > `detectedPages` is non-null only for PDF files (via `pdf-parse`). For DOCX, PPTX, XLS, XLSX, JPG, PNG → returns `null`. Client shows a manual page count input field when `null`.
 

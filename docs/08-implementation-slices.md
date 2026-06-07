@@ -20,6 +20,7 @@
 | Slice 05 | #13 | Customer shop list screen | Closed | Merged in PR #51 at 2026-05-19 via integration issue #54; mobile lint + 46/46 tests pass. |
 | Slice 07 | #15 | SlotsModule - templates + ShopSlots + active slot detection | Closed | GitHub issue #15 is `CLOSED`; merged in PR #57; closed as completed on 2026-06-07. |
 | Slice 08 | #16 | Customer slot picker component | Open | GitHub issue #16 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/slot-picker-component-mobile`. |
+| Slice 11 | #19 | File picker + upload service + FilePickerCard | Closed | Merged in PR #69 on 2026-06-07; mobile/API/shared lint pass, mobile/API/shared tests pass. |
 
 ## Agent Rules
 
