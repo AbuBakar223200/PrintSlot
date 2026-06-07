@@ -106,6 +106,8 @@ export function Button({
   return (
     <ButtonContext.Provider value={{ variant, size, disabled: isDisabled, isLoading }}>
       <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
         onPress={onPress}
         disabled={isDisabled}
         testID={testID}
