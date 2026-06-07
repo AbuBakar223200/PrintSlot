@@ -1,5 +1,9 @@
 import type { TransactionType, TransactionReason } from '../constants/roles';
 
+export interface WalletBalance {
+  balance: number;
+}
+
 export interface WalletTransaction {
   id: string;
   userId: string;
