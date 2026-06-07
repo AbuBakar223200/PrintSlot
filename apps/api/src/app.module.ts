@@ -12,6 +12,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { AppController } from './app.controller';
 import { ShopsModule } from './modules/shops/shops.module';
 import { SlotsModule } from './modules/slots/slots.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 
 /**
  * Root application module.
@@ -36,6 +37,7 @@ import { SlotsModule } from './modules/slots/slots.module';
     ShopsModule,
     SlotsModule,
     UploadModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [
