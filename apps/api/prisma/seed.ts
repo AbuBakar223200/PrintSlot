@@ -78,6 +78,147 @@ async function main() {
     update: {},
   });
   console.log('✓ AppConfig defaults seeded (LOW_BALANCE_THRESHOLD=50, SLOT_DURATION_MINS=30)');
+
+  // ── 5. Create test Customer in Supabase Auth + DB
+  const testCustomerEmail = 'customer@printslot.com';
+  const testCustomerPassword = 'Customer123';
+  let customerId: string;
+
+  const existingCustomer = listData.users.find((u) => u.email === testCustomerEmail);
+  if (existingCustomer) {
+    customerId = existingCustomer.id;
+    await supabase.auth.admin.updateUserById(customerId, { password: testCustomerPassword });
+    console.log(`✓ Test Customer already exists (id=${customerId}) — password reset`);
+  } else {
+    const { data: createdCustomer, error: custErr } =
+      await supabase.auth.admin.createUser({
+        email: testCustomerEmail,
+        password: testCustomerPassword,
+        email_confirm: true,
+      });
+    if (custErr) throw new Error(`Customer createUser failed: ${custErr.message}`);
+    customerId = createdCustomer.user.id;
+    console.log(`✓ Test Customer created (id=${customerId})`);
+  }
+
+  await prisma.user.upsert({
+    where: { id: customerId },
+    create: { id: customerId, email: testCustomerEmail, name: 'Test Customer', role: 'CUSTOMER' },
+    update: {},
+  });
+  console.log('✓ Test Customer User row upserted');
+
+  // ── 6. Create test Shop Owner in Supabase Auth + DB
+  const testOwnerEmail = 'owner@printslot.com';
+  const testOwnerPassword = 'Owner123';
+  let ownerId: string;
+
+  const existingOwner = listData.users.find((u) => u.email === testOwnerEmail);
+  if (existingOwner) {
+    ownerId = existingOwner.id;
+    await supabase.auth.admin.updateUserById(ownerId, { password: testOwnerPassword });
+    console.log(`✓ Test Shop Owner already exists (id=${ownerId}) — password reset`);
+  } else {
+    const { data: createdOwner, error: ownerErr } =
+      await supabase.auth.admin.createUser({
+        email: testOwnerEmail,
+        password: testOwnerPassword,
+        email_confirm: true,
+      });
+    if (ownerErr) throw new Error(`Owner createUser failed: ${ownerErr.message}`);
+    ownerId = createdOwner.user.id;
+    console.log(`✓ Test Shop Owner created (id=${ownerId})`);
+  }
+
+  await prisma.user.upsert({
+    where: { id: ownerId },
+    create: { id: ownerId, email: testOwnerEmail, name: 'Test Shop Owner', role: 'SHOP_OWNER' },
+    update: {},
+  });
+  console.log('✓ Test Shop Owner User row upserted');
+
+  // ── 7. Create Active Shop
+  const shop = await prisma.shop.upsert({
+    where: { ownerId },
+    create: {
+      ownerId,
+      name: 'Campus Print Hub',
+      address: 'Dhaka University Campus, Gate 4',
+      phone: '+8801711000000',
+      status: 'ACTIVE',
+      colorRate: 2.0,
+      bwRate: 1.0,
+      a3Surcharge: 0.5,
+      duplexDiscount: 0.2,
+      defaultProcessingMins: 15,
+    },
+    update: {},
+  });
+  console.log(`✓ Active Shop upserted (id=${shop.id})`);
+
+  // ── 8. Create Slot Template (09:00–17:00 all-day window)
+  let template = await prisma.slotTemplate.findFirst({
+    where: { startTime: '09:00', endTime: '23:59', deletedAt: null },
+  });
+  if (!template) {
+    template = await prisma.slotTemplate.create({
+      data: { startTime: '09:00', endTime: '23:59' },
+    });
+    console.log(`✓ Slot Template created (id=${template.id})`);
+  } else {
+    console.log(`✓ Slot Template already exists (id=${template.id})`);
+  }
+
+  // ── 9. Create open ShopSlot for today (BST)
+  const bstOffsetMs = 6 * 60 * 60 * 1000;
+  const bstNow = new Date(Date.now() + bstOffsetMs);
+  const todayStr = bstNow.toISOString().slice(0, 10);
+  const todayDate = new Date(`${todayStr}T00:00:00.000Z`);
+
+  const slot = await prisma.shopSlot.upsert({
+    where: {
+      shopId_templateId_date: {
+        shopId: shop.id,
+        templateId: template.id,
+        date: todayDate,
+      },
+    },
+    create: {
+      shopId: shop.id,
+      templateId: template.id,
+      date: todayDate,
+      isOpen: true,
+      maxOrders: 50,
+    },
+    update: { isOpen: true },
+  });
+  console.log(`✓ Today's ShopSlot upserted (id=${slot.id}, date=${todayStr})`);
+
+  // ── 10. Top up customer wallet with 500 BDT for testing
+  const existingTopup = await prisma.walletTransaction.findFirst({
+    where: { userId: customerId, reason: 'TOPUP_ADMIN' },
+  });
+  if (!existingTopup) {
+    await prisma.walletTransaction.create({
+      data: {
+        userId: customerId,
+        type: 'CREDIT',
+        amount: 500,
+        reason: 'TOPUP_ADMIN',
+      },
+    });
+    console.log('✓ Customer wallet topped up with 500 BDT');
+  } else {
+    console.log('✓ Customer wallet already has a topup');
+  }
+
+  console.log('\n── Test Credentials ──');
+  console.log(`Customer: ${testCustomerEmail} / ${testCustomerPassword}`);
+  console.log(`Owner:    ${testOwnerEmail} / ${testOwnerPassword}`);
+  console.log(`Admin:    ${adminEmail} / ${adminPassword}`);
+  console.log(`Shop ID:  ${shop.id}`);
+  console.log(`Shop ID:  ${shop.id}`);
+  console.log(`Slot ID:  ${slot.id}`);
 }
 
 main()

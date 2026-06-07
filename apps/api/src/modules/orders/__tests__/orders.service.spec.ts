@@ -3,7 +3,7 @@ import { ColorMode, PaperSize } from '@printslot/shared';
 import { OrdersService } from '../orders.service';
 
 describe('OrdersService price Module', () => {
-  const service = new OrdersService({} as never);
+  const service = new OrdersService({} as any, {} as any, {} as any, {} as any, {} as any, {} as any);
   
   // Specific mock shop rates requested in Slice 12
   const rates = {
