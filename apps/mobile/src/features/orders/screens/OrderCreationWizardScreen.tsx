@@ -226,8 +226,16 @@ export function OrderCreationWizardScreen({
   const setStep = useOrderWizardStore((state) => state.setStep);
   const setPreview = useOrderWizardStore((state) => state.setPreview);
   const reset = useOrderWizardStore((state) => state.reset);
-  const previewPrice = usePreviewPrice();
-  const createOrder = useCreateOrder();
+  const {
+    data: previewData,
+    error: previewError,
+    isPending: isPreviewPending,
+    mutate: previewPrice,
+  } = usePreviewPrice();
+  const {
+    isPending: isCreatePending,
+    mutate: createOrder,
+  } = useCreateOrder();
   const walletBalance = useWalletBalance();
 
   useEffect(() => {
@@ -296,7 +304,7 @@ export function OrderCreationWizardScreen({
       return;
     }
 
-    previewPrice.mutate(previewInput, {
+    previewPrice(previewInput, {
       onSuccess: (result) => {
         setPreview(result.totalPrice);
       },
@@ -312,16 +320,16 @@ export function OrderCreationWizardScreen({
   }, [files, filesReady, paymentMethod, slotId, storeMode, storeShopId]);
 
   const previewRows = useMemo<PreviewRow[]>(() => {
-    if (!previewPrice.data) {
+    if (!previewData) {
       return [];
     }
 
-    return previewPrice.data.files.map((pricedFile, index) => ({
+    return previewData.files.map((pricedFile, index) => ({
       id: files[index]?.localId ?? `preview-${index}`,
       fileName: files[index]?.upload?.fileName ?? files[index]?.localFile.name ?? '',
       pricedFile,
     }));
-  }, [files, previewPrice.data]);
+  }, [files, previewData]);
 
   const goPrevious = useCallback(() => {
     const nextStep = previousStep(step, storeMode);
@@ -345,10 +353,10 @@ export function OrderCreationWizardScreen({
       return;
     }
 
-    if (step === 3 && previewPrice.data) {
+    if (step === 3 && previewData) {
       setStep(4);
     }
-  }, [previewPrice.data, setStep, step]);
+  }, [previewData, setStep, step]);
 
   const openWallet = useCallback(() => {
     router.push('/(customer)/wallet');
@@ -401,7 +409,7 @@ export function OrderCreationWizardScreen({
       return;
     }
 
-    createOrder.mutate(createInput, {
+    createOrder(createInput, {
       onSuccess: (order) => {
         router.replace(`/(customer)/orders/${order.id}`);
         reset();
@@ -458,11 +466,11 @@ export function OrderCreationWizardScreen({
     : step === 2
       ? filesReady
       : step === 3
-        ? previewPrice.data !== undefined && !previewPrice.isPending
+        ? previewData !== undefined && !isPreviewPending
         : false;
   const walletSelected = paymentMethod === 'WALLET';
   const cashSelected = paymentMethod === 'CASH';
-  const placeOrderDisabled = createInput === null || createOrder.isPending;
+  const placeOrderDisabled = createInput === null || isCreatePending;
 
   return (
     <View style={styles.container}>
@@ -470,7 +478,7 @@ export function OrderCreationWizardScreen({
         <View>
           <Text style={styles.title}>{orderWizardText(orderWizardKeys.title)}</Text>
           <Text style={styles.progressText} testID="order-wizard-progress">
-            {`${step} / 4`}
+            {orderWizardText(orderWizardKeys.progress, { step, totalSteps: 4 })}
           </Text>
         </View>
         <Pressable
@@ -514,19 +522,19 @@ export function OrderCreationWizardScreen({
 
         {step === 3 ? (
           <View style={styles.section}>
-            {previewPrice.isPending ? (
+            {isPreviewPending ? (
               <View style={styles.stateInline}>
                 <ActivityIndicator color={colors.primary} />
                 <Text style={styles.stateText}>{orderWizardText(orderWizardKeys.previewLoading)}</Text>
               </View>
             ) : null}
 
-            {previewPrice.error ? (
+            {previewError ? (
               <View style={styles.errorBox}>
                 <Text style={styles.errorTitle}>
                   {orderWizardText(orderWizardKeys.previewErrorTitle)}
                 </Text>
-                <Text style={styles.errorText}>{previewPrice.error.message}</Text>
+                <Text style={styles.errorText}>{previewError.message}</Text>
               </View>
             ) : null}
 
@@ -540,11 +548,11 @@ export function OrderCreationWizardScreen({
               />
             ) : null}
 
-            {previewPrice.data ? (
+            {previewData ? (
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>{orderWizardText(orderWizardKeys.total)}</Text>
                 <Text style={styles.totalValue}>
-                  {formatCurrency(previewPrice.data.totalPrice)}
+                  {formatCurrency(previewData.totalPrice)}
                 </Text>
               </View>
             ) : null}
@@ -611,7 +619,7 @@ export function OrderCreationWizardScreen({
         {step === 4 ? (
           <Button
             disabled={placeOrderDisabled}
-            isLoading={createOrder.isPending}
+            isLoading={isCreatePending}
             onPress={placeOrder}
             size="md"
             style={styles.footerButton}

@@ -1,5 +1,6 @@
 export const orderWizardKeys = {
   title: 'orders.wizard.title',
+  progress: 'orders.wizard.progress',
   cancel: 'orders.wizard.cancel',
   keepEditing: 'orders.wizard.keepEditing',
   discard: 'orders.wizard.discard',
@@ -44,6 +45,7 @@ type OrderWizardKey = typeof orderWizardKeys[keyof typeof orderWizardKeys];
 
 const orderWizardFallbacks: Record<OrderWizardKey, string> = {
   [orderWizardKeys.title]: 'New Order',
+  [orderWizardKeys.progress]: '{step} / {totalSteps}',
   [orderWizardKeys.cancel]: 'Cancel',
   [orderWizardKeys.keepEditing]: 'Keep editing',
   [orderWizardKeys.discard]: 'Discard',
@@ -86,7 +88,7 @@ const orderWizardFallbacks: Record<OrderWizardKey, string> = {
 
 export function orderWizardText(
   key: OrderWizardKey,
-  values?: { amount?: string; name?: string; pages?: number },
+  values?: { amount?: string; name?: string; pages?: number; step?: number; totalSteps?: number },
 ): string {
   let template = orderWizardFallbacks[key];
 
@@ -100,6 +102,14 @@ export function orderWizardText(
 
   if (values?.pages !== undefined) {
     template = template.replace('{pages}', String(values.pages));
+  }
+
+  if (values?.step !== undefined) {
+    template = template.replace('{step}', String(values.step));
+  }
+
+  if (values?.totalSteps !== undefined) {
+    template = template.replace('{totalSteps}', String(values.totalSteps));
   }
 
   return template;
