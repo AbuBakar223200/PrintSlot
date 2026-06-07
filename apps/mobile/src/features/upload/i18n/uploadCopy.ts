@@ -3,6 +3,19 @@ export const uploadKeys = {
   collapse: 'upload.filePicker.collapse',
   remove: 'upload.filePicker.remove',
   retry: 'upload.filePicker.retry',
+  addFile: 'upload.filePicker.addFile',
+  filesCount: 'upload.filePicker.filesCount',
+  empty: 'upload.filePicker.empty',
+  pickerTitle: 'upload.filePicker.pickerTitle',
+  pickDocument: 'upload.filePicker.pickDocument',
+  pickImage: 'upload.filePicker.pickImage',
+  cancel: 'upload.filePicker.cancel',
+  unsupportedTypeTitle: 'upload.filePicker.unsupportedTypeTitle',
+  unsupportedTypeBody: 'upload.filePicker.unsupportedTypeBody',
+  photoPermissionTitle: 'upload.filePicker.photoPermissionTitle',
+  photoPermissionBody: 'upload.filePicker.photoPermissionBody',
+  pickerErrorTitle: 'upload.filePicker.pickerErrorTitle',
+  pickerErrorBody: 'upload.filePicker.pickerErrorBody',
   uploading: 'upload.filePicker.uploading',
   uploaded: 'upload.filePicker.uploaded',
   pending: 'upload.filePicker.pending',
@@ -21,6 +34,19 @@ const uploadFallbacks: Record<UploadKey, string> = {
   [uploadKeys.collapse]: 'Hide config',
   [uploadKeys.remove]: 'Remove',
   [uploadKeys.retry]: 'Retry',
+  [uploadKeys.addFile]: 'Add file',
+  [uploadKeys.filesCount]: 'Files ({current} / {max})',
+  [uploadKeys.empty]: 'Add at least 1 file.',
+  [uploadKeys.pickerTitle]: 'Add file',
+  [uploadKeys.pickDocument]: 'Pick document',
+  [uploadKeys.pickImage]: 'Pick image',
+  [uploadKeys.cancel]: 'Cancel',
+  [uploadKeys.unsupportedTypeTitle]: 'Unsupported file type',
+  [uploadKeys.unsupportedTypeBody]: 'Please choose a PDF, Office document, JPG, or PNG.',
+  [uploadKeys.photoPermissionTitle]: 'Photo access needed',
+  [uploadKeys.photoPermissionBody]: 'Allow photo access to pick images.',
+  [uploadKeys.pickerErrorTitle]: 'Could not open picker',
+  [uploadKeys.pickerErrorBody]: 'Please try again.',
   [uploadKeys.uploading]: 'Uploading',
   [uploadKeys.uploaded]: 'Uploaded',
   [uploadKeys.pending]: 'Pending',
@@ -34,12 +60,20 @@ const uploadFallbacks: Record<UploadKey, string> = {
 
 export function uploadText(
   key: UploadKey,
-  values?: { count?: number },
+  values?: { count?: number; current?: number; max?: number },
 ): string {
-  const template = uploadFallbacks[key];
+  let template = uploadFallbacks[key];
 
   if (values?.count !== undefined) {
-    return template.replace('{count}', String(values.count));
+    template = template.replace('{count}', String(values.count));
+  }
+
+  if (values?.current !== undefined) {
+    template = template.replace('{current}', String(values.current));
+  }
+
+  if (values?.max !== undefined) {
+    template = template.replace('{max}', String(values.max));
   }
 
   return template;
