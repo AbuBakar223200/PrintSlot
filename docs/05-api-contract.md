@@ -25,11 +25,11 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/auth/register` | No | Public | `{ email, password, name, phone?, role: CUSTOMER\|SHOP_OWNER }` | `{ user: User, accessToken: string }` |
+| POST | `/auth/register` | No | Public | `{ email, password, name, phone?, role: CUSTOMER\|STAFF\|SHOP_OWNER }` | `{ user: User, accessToken: string }` |
 | POST | `/auth/login` | No | Public | `{ email, password }` | `{ user: User, accessToken: string }` |
 | GET | `/auth/me` | Yes | Any | — | `User` |
 
-> Platform Admin and Staff accounts created by Platform Admin / Shop Owner only — not via public register.
+> Platform Admin accounts are seeded or created by privileged actors — not via public register.
 
 ---
 
@@ -38,7 +38,7 @@
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
 | PATCH | `/users/me` | Yes | Any | `{ name?, phone?, language?: EN\|BN }` | `User` |
-| PATCH | `/users/me/device` | Yes | Any | `{ deviceId: string, expoPushToken: string }` | `UserDevice` (upsert by deviceId) |
+| PATCH | `/users/me/device` | Yes | Any | `{ deviceId: string, token: string }` | `UserDevice` (upsert by deviceId) |
 | DELETE | `/users/me/device/:deviceId` | Yes | Any | — | `{ success: true }` |
 
 ---
@@ -53,8 +53,8 @@
 | PATCH | `/shops/:id` | Yes | SHOP_OWNER (own shop) | `{ name?, address?, phone?, colorRate?, bwRate?, a3Surcharge?, duplexDiscount? }` | `Shop` |
 | PATCH | `/shops/:id/status` | Yes | PLATFORM_ADMIN | `{ status: ACTIVE\|REJECTED\|SUSPENDED, rejectionReason? }` | `Shop` |
 | PATCH | `/shops/:id/resubmit` | Yes | SHOP_OWNER (own, status=REJECTED only — not SUSPENDED) | — | `Shop` (status → PENDING, rejectionReason cleared) |
-| GET | `/shops/:id/slots` | Yes | CUSTOMER | `?date=YYYY-MM-DD` | `ShopSlot[]` (isOpen=true, currentCount < maxOrders only) |
-| GET | `/shops/:id/slots/active` | Yes | CUSTOMER | — | `ShopSlot \| null` — returns current time window's open slot if one exists right now (BST). `null` = "Print Now" unavailable. |
+| GET | `/shops/:id/slots` | Yes | Any authenticated user | `?date=YYYY-MM-DD` | `Slot[]` (isOpen=true, currentCount < maxOrders, template not soft-deleted only) |
+| GET | `/shops/:id/slots/active` | No | Public | — | `Slot \| null` — returns current BST time window's open, non-full slot if one exists. `null` = "Print Now" unavailable. |
 
 ---
 
@@ -62,9 +62,9 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| GET | `/slots/templates` | Yes | PLATFORM_ADMIN | — | `SlotTemplate[]` |
-| POST | `/slots/templates` | Yes | PLATFORM_ADMIN | `{ startTime: "HH:MM", endTime: "HH:MM", durationMins }` | `SlotTemplate` |
-| PATCH | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | `{ startTime?, endTime?, durationMins? }` | `SlotTemplate` |
+| GET | `/slots/templates` | Yes | Any authenticated user | — | `SlotTemplate[]` excluding soft-deleted templates |
+| POST | `/slots/templates` | Yes | PLATFORM_ADMIN | `{ startTime: "HH:MM", endTime: "HH:MM" }` | `SlotTemplate` |
+| PATCH | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | `{ startTime?, endTime? }` | `SlotTemplate` |
 | DELETE | `/slots/templates/:id` | Yes | PLATFORM_ADMIN | — | `{ success: true }` |
 
 ---
@@ -73,8 +73,7 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/shops/:id/slots` | Yes | SHOP_OWNER (own shop) | `{ templateId, date: "YYYY-MM-DD", isOpen, maxOrders }` | `ShopSlot` |
-| PATCH | `/shops/:id/slots/:slotId` | Yes | SHOP_OWNER (own shop) | `{ isOpen?, maxOrders? }` | `ShopSlot` |
+| POST | `/shops/:id/slots` | Yes | SHOP_OWNER (own shop) | `{ templateId, date: "YYYY-MM-DD", isOpen, maxOrders }` | `Slot` (upserts by shopId + templateId + date; does not change currentCount) |
 
 ---
 

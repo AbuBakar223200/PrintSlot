@@ -4,6 +4,8 @@
 > Rules sourced from `vercel-react-native-skills` and adapted for the PrintSlot stack.
 > Stack: **Expo Router · React Native Reanimated · TanStack Query · Zustand · FlashList · expo-image**
 
+> **Git:** Always cut branches from `origin/development`, not `main`. PRs target `development`. Branch format: `ihm/<type>/<desc>`. See `CLAUDE.md` for full workflow.
+
 ---
 
 ## Table of Contents
@@ -23,6 +25,7 @@
 13. [JavaScript](#13-javascript) — LOW
 14. [Fonts](#14-fonts) — LOW
 15. [PrintSlot-Specific Rules](#15-printslot-specific-rules)
+16. [Strict Reuse Rule](#16-strict-reuse-rule) — CRITICAL
 
 ---
 
@@ -790,6 +793,10 @@ After adding: `npx expo prebuild` then rebuild the app.
 
 These rules are specific to the PrintSlot mobile app (`apps/mobile`) and override or extend the generic rules above.
 
+### 15.0 Slice Status
+
+Before starting any slice, read [`docs/08-implementation-slices.md`](./docs/08-implementation-slices.md) and the linked GitHub issue. Slice 01 / issue #9 is closed and must not be reimplemented unless the user explicitly asks to reopen or replace it.
+
 ### 15.1 Data Fetching — TanStack Query Is the Cache
 
 Never manually sync server data into Zustand. TanStack Query IS the cache.
@@ -942,6 +949,14 @@ Before shipping any mobile feature, verify:
 - [ ] Native modals — not JS bottom sheet libraries
 - [ ] TanStack Query is the server cache — no server data in Zustand
 - [ ] `orderNumber` shown to users, `id` (UUID) used in API calls
+
+---
+
+## 16. Strict Reuse Rule
+
+Before adding any new function, component, hook, service, DTO, type, utility, or test helper, search the repository for an existing equivalent. Reuse, extend, or move existing code instead of duplicating it. If duplication is unavoidable, document the reason in the PR/commit notes.
+
+This rule applies to every agent session in this repository.
 
 ---
 

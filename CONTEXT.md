@@ -16,9 +16,12 @@ Use this to know which file to open before doing any work.
 | Every entity, field, constraint, pricing formula, ETA algorithm | `docs/04-data-model.md` |
 | Every API endpoint, request/response shape, WebSocket events | `docs/05-api-contract.md` |
 | High-level architecture, ADRs, module folder layout | `docs/TECHNICAL_DESIGN.md` |
-| What "done" looks like (20 criteria) | `docs/06-definition-of-done.md` |
+| Full ADR text (rationales, alternatives considered) | `docs/03-architecture-decisions.md` |
+| Recent architecture handoff notes for future agents | `docs/architecture-handoff.md` |
+| What "done" looks like (21 criteria) | `docs/06-definition-of-done.md` |
 | Coding rules, patterns, examples for NestJS + React Native | `docs/CODING_STANDARDS.md` |
 | Known risks and mitigations | `docs/07-risk-register.md` |
+| Implementation slice status and GitHub issue mapping | `docs/08-implementation-slices.md` |
 | What is explicitly NOT being built in v1 | `docs/PRD.md` §4 (Non-Goals) — summary below |
 
 ---
@@ -73,6 +76,27 @@ PrintSlot digitizes the print shop experience. Customers upload documents, confi
 
 8. **Push tokens live in `UserDevice`, never on `User`.**
    Dispatch fans out to all `UserDevice` rows for a user. Delete row on `DeviceNotRegistered`.
+
+9. **Reuse before writing new code.**
+   Before adding any function, component, hook, service, DTO, type, utility, or test helper, search the repo for an existing equivalent. Reuse, extend, or move existing code instead of duplicating it. If duplication is unavoidable, document the reason in the PR/commit notes.
+
+---
+
+## Git Workflow
+
+```
+main          ← production-stable, never branch from here for dev work
+development   ← integration branch, base for all feature branches
+ihm/<type>/<desc>  ← feature branches
+```
+
+| Action | Command |
+|---|---|
+| Start new feature | `git checkout -b ihm/<type>/<desc> origin/development` |
+| PR target | `development` (never `main`) |
+| Release | `development` → `main` only at release time |
+
+**Branch naming:** `ihm/<type>/<kebab-case-description>` — see `CLAUDE.md` for full rules.
 
 ---
 
@@ -181,6 +205,10 @@ _Avoid_: device, push token (push token is a field on UserDevice, not the entity
 **OrderNumber**
 The human-readable reference for an Order shown to customers and staff (format: `PS-XXXXX`). Used at counter pickup. UUID is used for all server/API operations.
 _Avoid_: order ID (ambiguous — could mean UUID or OrderNumber), reference number
+
+**Profile**
+A User's editable self-data: name, phone, and (after Slice 33) language. Mutated via `PATCH /users/me`. The user-facing screen is the Profile screen — never call it "Settings" (Settings refers to AppConfig).
+_Avoid_: settings, account, my info, preferences
 
 **AppConfig**
 A key-value store of platform-wide settings managed by Platform Admin (e.g. `LOW_BALANCE_THRESHOLD`, `SLOT_DURATION_MINS`).

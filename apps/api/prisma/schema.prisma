@@ -1,0 +1,264 @@
+// Prisma Schema for PrintSlot
+// Source of truth: docs/04-data-model.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  STAFF
+  SHOP_OWNER
+  PLATFORM_ADMIN
+}
+
+enum Language {
+  EN
+  BN
+}
+
+enum ShopStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum PickupMode {
+  QUEUE
+  SLOT
+}
+
+enum PaymentMethod {
+  WALLET
+  CASH
+}
+
+enum OrderStatus {
+  QUEUED
+  SCHEDULED
+  PROCESSING
+  READY
+  COLLECTED
+  CANCELLED
+}
+
+enum ColorMode {
+  COLOR
+  BW
+}
+
+enum PaperSize {
+  A4
+  A3
+  LETTER
+}
+
+enum Orientation {
+  PORTRAIT
+  LANDSCAPE
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionReason {
+  TOPUP_ADMIN
+  TOPUP_GATEWAY
+  ORDER_PAYMENT
+  ORDER_REFUND
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_ACCEPTED
+  ORDER_READY
+  ORDER_CANCELLED
+  NEW_ORDER
+  WALLET_TOPUP
+  WALLET_DEDUCTED
+  SHOP_APPROVED
+  SHOP_REJECTED
+  SHOP_SUSPENDED
+  STAFF_ASSIGNED
+  LOW_BALANCE
+}
+
+// ─── Models ────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  role      Role     @default(CUSTOMER)
+  shopId    String?
+  language  Language @default(EN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  shop              Shop?              @relation("ShopStaff", fields: [shopId], references: [id])
+  ownedShop         Shop?              @relation("ShopOwner")
+  orders            Order[]
+  walletTransactions WalletTransaction[]
+  notifications     Notification[]
+  devices           UserDevice[]
+}
+
+model UserDevice {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String
+  deviceId  String
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+}
+
+model Shop {
+  id                    String     @id @default(uuid())
+  name                  String
+  address               String
+  phone                 String?
+  status                ShopStatus @default(PENDING)
+  rejectionReason       String?
+  ownerId               String     @unique
+  colorRate             Decimal
+  bwRate                Decimal
+  a3Surcharge           Decimal
+  duplexDiscount        Decimal
+  defaultProcessingMins Int        @default(15)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  // Relations
+  owner  User       @relation("ShopOwner", fields: [ownerId], references: [id])
+  staff  User[]     @relation("ShopStaff")
+  slots  ShopSlot[]
+  orders Order[]
+}
+
+model SlotTemplate {
+  id        String    @id @default(uuid())
+  startTime String
+  endTime   String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  shopSlots ShopSlot[]
+}
+
+model ShopSlot {
+  id           String   @id @default(uuid())
+  shopId       String
+  templateId   String
+  date         DateTime @db.Date
+  isOpen       Boolean  @default(false)
+  maxOrders    Int
+  currentCount Int      @default(0)
+
+  // Relations
+  shop     Shop         @relation(fields: [shopId], references: [id])
+  template SlotTemplate @relation(fields: [templateId], references: [id])
+  orders   Order[]
+
+  @@unique([shopId, templateId, date])
+}
+
+model Order {
+  id                  String        @id @default(uuid())
+  orderNumber         String        @unique
+  customerId          String
+  shopId              String
+  pickupMode          PickupMode
+  slotId              String
+  status              OrderStatus   @default(QUEUED)
+  paymentMethod       PaymentMethod
+  totalPages          Int
+  colorPages          Int
+  bwPages             Int
+  totalPrice          Decimal
+  processingStartedAt DateTime?
+  readyAt             DateTime?
+  cancelledAt         DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relations
+  customer           User                @relation(fields: [customerId], references: [id])
+  shop               Shop                @relation(fields: [shopId], references: [id])
+  slot               ShopSlot            @relation(fields: [slotId], references: [id])
+  orderFiles         OrderFile[]
+  walletTransactions WalletTransaction[]
+  notifications      Notification[]
+}
+
+model OrderFile {
+  id            String      @id @default(uuid())
+  orderId       String
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  detectedPages Int
+  colorMode     ColorMode
+  paperSize     PaperSize
+  orientation   Orientation
+  copies        Int
+  duplex        Boolean     @default(false)
+  pageRange     String?
+  resolvedPages Int
+  subtotalPrice Decimal
+  uploadedAt    DateTime    @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model WalletTransaction {
+  id        String            @id @default(uuid())
+  userId    String
+  type      TransactionType
+  amount    Decimal
+  reason    TransactionReason
+  orderId   String?
+  createdAt DateTime          @default(now())
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      NotificationType
+  read      Boolean          @default(false)
+  orderId   String?
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+}
+
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

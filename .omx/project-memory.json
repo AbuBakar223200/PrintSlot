@@ -1,0 +1,10 @@
+{
+  "directives": [
+    {
+      "directive": "Before adding any new function, component, hook, service, DTO, type, utility, or test helper, search the repository for an existing equivalent. Reuse, extend, or move existing code instead of duplicating it. If duplication is unavoidable, document the reason in PR/commit notes.",
+      "priority": "high",
+      "context": "Project-wide development rule requested by user on 2026-05-18.",
+      "timestamp": "2026-05-18T14:07:13.917Z"
+    }
+  ]
+}

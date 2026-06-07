@@ -1,38 +1,46 @@
-# Node
+# Dependencies
 node_modules/
-npm-debug.log
-yarn-error.log
-.pnp
-.pnp.js
 
-# Build
+# Build output
 dist/
-build/
 .next/
-out/
 .expo/
+*.tsbuildinfo
 
-# Env
+# Environment files — NEVER commit credentials
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
-# IDE / OS
-.vscode/
-.idea/
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Prisma — migrations MUST be tracked (deployed via prisma migrate deploy)
+# apps/api/prisma/migrations/  ← do NOT ignore
+
+# Expo
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Testing
+coverage/
 
 # Turborepo
 .turbo/
 
-# Agents
-.agents/brain/
-.agents/scratch/
-.claude/plugins/skills
-.claude/worktrees/
+# OMX runtime state
+.omx/logs/
+.omx/state/
+.omx/metrics.json
 
-# Misc
-.omx/
-__pycache__/
+# Generated
+apps/api/prisma/generated/
