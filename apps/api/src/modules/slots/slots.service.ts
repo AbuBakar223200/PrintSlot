@@ -162,8 +162,7 @@ export class SlotsService {
 
     const slot = slots
       .filter((candidate) => candidate.currentCount < candidate.maxOrders)
-      .sort((a, b) => a.template.startTime.localeCompare(b.template.startTime))
-      .at(0);
+      .sort((a, b) => a.template.startTime.localeCompare(b.template.startTime))[0];
 
     return slot ? this.mapSlot(slot) : null;
   }
