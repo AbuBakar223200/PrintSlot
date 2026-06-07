@@ -5,11 +5,12 @@ import { SlotsModule } from '../slots/slots.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CloudinaryProvider } from '../../config/cloudinary.config';
+import { OrdersGateway } from './orders.gateway';
 
 @Module({
   imports: [SlotsModule, WalletModule, NotificationsModule],
   controllers: [OrdersController],
-  providers: [OrdersService, CloudinaryProvider],
-  exports: [OrdersService],
+  providers: [OrdersService, CloudinaryProvider, OrdersGateway],
+  exports: [OrdersService, OrdersGateway],
 })
 export class OrdersModule {}

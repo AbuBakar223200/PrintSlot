@@ -58,10 +58,17 @@ const mockNotifications = {
   notifyNewOrder: jest.fn().mockResolvedValue({}),
 };
 
+import { OrdersGateway } from '../orders.gateway';
+
 const mockCloudinary = {
   uploader: {
     rename: jest.fn().mockResolvedValue({}),
   },
+};
+
+const mockOrdersGateway = {
+  emitStatusChanged: jest.fn(),
+  emitQueueUpdated: jest.fn(),
 };
 
 describe('OrdersService - createOrder Flow', () => {
@@ -76,6 +83,7 @@ describe('OrdersService - createOrder Flow', () => {
         { provide: WalletService, useValue: mockWalletService },
         { provide: NotificationsService, useValue: mockNotifications },
         { provide: CLOUDINARY_PROVIDER, useValue: mockCloudinary },
+        { provide: OrdersGateway, useValue: mockOrdersGateway },
       ],
     }).compile();
 
