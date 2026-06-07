@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Inject,
@@ -8,7 +9,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { ColorMode, PaperSize, type OrderPriceResult } from '@printslot/shared';
+import { ColorMode, PaperSize, TransactionReason, type OrderPriceResult } from '@printslot/shared';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { CLOUDINARY_PROVIDER } from '../../config/cloudinary.config';
@@ -111,9 +112,12 @@ export class OrdersService {
       const nextVal = result[0]?.nextval || result[0]?.nextVal;
       const orderNumber = `PS-${Number(nextVal).toString().padStart(5, '0')}`;
 
-      // A. If paymentMethod is WALLET, debit funds atomically
+      // A. If paymentMethod is WALLET, check balance first to throw early
       if (dto.paymentMethod === 'WALLET') {
-        await this.walletService.debit(customerId, pricing.totalPrice, orderId, tx);
+        const currentBalance = await this.walletService.getBalance(customerId, tx);
+        if (currentBalance < pricing.totalPrice) {
+          throw new HttpException('Insufficient balance', HttpStatus.PAYMENT_REQUIRED);
+        }
       }
 
       // B. Increment Slot capacity safely
@@ -164,6 +168,11 @@ export class OrdersService {
           orderFiles: true,
         },
       });
+
+      // A. If paymentMethod is WALLET, debit funds atomically
+      if (dto.paymentMethod === 'WALLET') {
+        await this.walletService.debit(customerId, pricing.totalPrice, orderId, tx);
+      }
 
       return createdOrder;
     });
@@ -464,5 +473,224 @@ export class OrdersService {
     etaMins += order.colorPages * avgColorRate + order.bwPages * avgBwRate;
 
     return Math.ceil(etaMins);
+  }
+
+  /**
+   * Retrieves a paginated list of orders scoped by the user's role.
+   */
+  async listOrders(
+    currentUser: any,
+    queryPage?: number | string,
+    queryLimit?: number | string,
+  ): Promise<{
+    data: any[];
+    pagination: { page: number; limit: number; total: number };
+  }> {
+    const page = Math.max(1, Number(queryPage || 1));
+    const limit = Math.min(100, Math.max(1, Number(queryLimit || 20)));
+
+    if (currentUser.role === 'CUSTOMER') {
+      const where = { customerId: currentUser.id };
+      const total = await this.prisma.order.count({ where });
+      const data = await this.prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          orderFiles: true,
+          slot: { include: { template: true } },
+          shop: true,
+        },
+      });
+      return { data, pagination: { page, limit, total } };
+    }
+
+    if (currentUser.role === 'STAFF' || currentUser.role === 'SHOP_OWNER') {
+      if (!currentUser.shopId) {
+        throw new ForbiddenException('Staff must belong to a shop.');
+      }
+      const where = { shopId: currentUser.shopId };
+      const allOrders = await this.prisma.order.findMany({
+        where,
+        include: {
+          orderFiles: true,
+          slot: { include: { template: true } },
+          shop: true,
+          customer: true,
+        },
+      });
+
+      // SLOT first sort: SLOT orders by slot.date ASC then template.startTime ASC,
+      // then QUEUE orders by createdAt ASC.
+      allOrders.sort((a, b) => {
+        if (a.pickupMode === 'SLOT' && b.pickupMode !== 'SLOT') return -1;
+        if (a.pickupMode !== 'SLOT' && b.pickupMode === 'SLOT') return 1;
+
+        if (a.pickupMode === 'SLOT' && b.pickupMode === 'SLOT') {
+          const dateA = a.slot?.date || '';
+          const dateB = b.slot?.date || '';
+          if (dateA < dateB) return -1;
+          if (dateA > dateB) return 1;
+
+          const timeA = a.slot?.template?.startTime || '';
+          const timeB = b.slot?.template?.startTime || '';
+          if (timeA < timeB) return -1;
+          if (timeA > timeB) return 1;
+        } else {
+          // Both are QUEUE
+          return a.createdAt.getTime() - b.createdAt.getTime();
+        }
+        return 0;
+      });
+
+      const total = allOrders.length;
+      const start = (page - 1) * limit;
+      const data = allOrders.slice(start, start + limit);
+      return { data, pagination: { page, limit, total } };
+    }
+
+    throw new ForbiddenException('Unauthorized role');
+  }
+
+  /**
+   * Retrieves a single order by ID with scoping and computed fields (queuePosition + etaMins).
+   */
+  async getOrderById(orderId: string, currentUser: any): Promise<any> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderFiles: true,
+        shop: true,
+        slot: { include: { template: true } },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Role-based scoping check
+    if (currentUser.role === 'CUSTOMER') {
+      if (order.customerId !== currentUser.id) {
+        throw new ForbiddenException('You do not have permission to view this order');
+      }
+    } else if (currentUser.role === 'STAFF' || currentUser.role === 'SHOP_OWNER') {
+      if (!currentUser.shopId || order.shopId !== currentUser.shopId) {
+        throw new ForbiddenException('You do not have permission to view this order');
+      }
+    } else {
+      throw new ForbiddenException('Unauthorized role');
+    }
+
+    let queuePosition: number | null = null;
+    let etaMins: number | null = null;
+
+    if (order.status === 'QUEUED' || order.status === 'PROCESSING') {
+      queuePosition = await this.computeQueuePosition(order);
+      etaMins = await this.computeETA(order);
+    }
+
+    return {
+      ...order,
+      queuePosition,
+      etaMins,
+    };
+  }
+
+  /**
+   * Cancels an order atomically, refunding the wallet balance and decrementing slot counts if applicable.
+   */
+  async cancelOrder(orderId: string, currentUser: any): Promise<any> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        shop: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Only customer can cancel their own order
+    if (order.customerId !== currentUser.id) {
+      throw new ForbiddenException('You do not have permission to cancel this order');
+    }
+
+    if (order.status !== 'QUEUED' && order.status !== 'SCHEDULED') {
+      throw new BadRequestException('Cannot cancel order in this status.');
+    }
+
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+        },
+        include: {
+          customer: true,
+          shop: true,
+        },
+      });
+
+      if (order.paymentMethod === 'WALLET') {
+        await this.walletService.credit(
+          order.customerId,
+          Number(order.totalPrice),
+          TransactionReason.ORDER_REFUND,
+          orderId,
+          tx,
+        );
+      }
+
+      if (order.pickupMode === 'SLOT' || order.slotId) {
+        await tx.shopSlot.update({
+          where: { id: order.slotId },
+          data: {
+            currentCount: { decrement: 1 },
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    // Notify & emit status updates out-of-band/post-commit
+    process.nextTick(async () => {
+      try {
+        const staffAndOwners = await this.prisma.user.findMany({
+          where: {
+            OR: [
+              { shopId: updatedOrder.shopId },
+              { id: updatedOrder.shop.ownerId },
+            ],
+          },
+          select: { id: true },
+        });
+
+        await this.notificationsService.notifyOrderCancelled(
+          { id: updatedOrder.id, orderNumber: updatedOrder.orderNumber },
+          { id: updatedOrder.customerId },
+          staffAndOwners,
+        );
+      } catch (err: any) {
+        this.logger.error(`Failed to send order cancellation notifications: ${err.message}`, err.stack);
+      }
+
+      try {
+        await this.ordersGateway.emitStatusChanged(
+          updatedOrder.id,
+          'CANCELLED',
+          updatedOrder.updatedAt,
+        );
+      } catch (err: any) {
+        this.logger.error(`Failed to emit order status change gateway event: ${err.message}`, err.stack);
+      }
+    });
+
+    return updatedOrder;
   }
 }
