@@ -51,6 +51,7 @@ const mockSlotsService = {
 
 const mockWalletService = {
   debit: jest.fn(),
+  getBalance: jest.fn().mockResolvedValue(1000),
 };
 
 const mockNotifications = {
@@ -223,7 +224,7 @@ describe('OrdersService - createOrder Flow', () => {
 
   it('5. WALLET order with insufficient balance → throws 402; no Order, no debit row, no slot increment', async () => {
     mockSlotsService.getActiveSlot.mockResolvedValueOnce(mockSlot);
-    mockWalletService.debit.mockRejectedValueOnce(new HttpException('Insufficient balance', 402));
+    mockWalletService.getBalance.mockResolvedValueOnce(0);
 
     mockPrisma.$transaction.mockImplementationOnce(async (cb) => cb(txMock));
 

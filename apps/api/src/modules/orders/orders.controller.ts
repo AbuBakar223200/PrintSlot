@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Role, type OrderPriceResult } from '@printslot/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -29,5 +29,36 @@ export class OrdersController {
     @Body(new ZodValidationPipe(CreateOrderSchema)) dto: CreateOrderDto,
   ): Promise<any> {
     return this.ordersService.createOrder(req.user.id, dto);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER, Role.STAFF, Role.SHOP_OWNER)
+  listOrders(
+    @Req() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<any> {
+    return this.ordersService.listOrders(req.user, page, limit);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER, Role.STAFF, Role.SHOP_OWNER)
+  getOrderById(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<any> {
+    return this.ordersService.getOrderById(id, req.user);
+  }
+
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
+  cancelOrder(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<any> {
+    return this.ordersService.cancelOrder(id, req.user);
   }
 }

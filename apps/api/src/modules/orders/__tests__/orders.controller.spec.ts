@@ -26,21 +26,38 @@ const previewResult = {
 
 const mockOrdersService = {
   previewPrice: jest.fn().mockResolvedValue(previewResult),
+  listOrders: jest.fn().mockResolvedValue({
+    data: [],
+    pagination: { page: 1, limit: 20, total: 0 },
+  }),
+  getOrderById: jest.fn().mockResolvedValue({
+    id: 'order-1',
+    orderNumber: 'ORD-001',
+    status: 'QUEUED',
+    queuePosition: 1,
+    etaMins: 5,
+  }),
+  cancelOrder: jest.fn().mockResolvedValue({
+    id: 'order-1',
+    orderNumber: 'ORD-001',
+    status: 'CANCELLED',
+    cancelledAt: new Date().toISOString(),
+  }),
 };
 
-const userForRole = (role: Role) => ({
+const userForRole = (role: Role, shopId: string | null = null) => ({
   id: 'user-123',
   email: 'customer@example.com',
   name: 'Customer User',
   phone: null,
   role,
-  shopId: null,
+  shopId,
   language: 'EN',
   createdAt: new Date(),
   updatedAt: new Date(),
 });
 
-async function createApp(role?: Role) {
+async function createApp(role?: Role, shopId: string | null = null) {
   const module: TestingModule = await Test.createTestingModule({
     controllers: [OrdersController],
     providers: [
@@ -55,7 +72,7 @@ async function createApp(role?: Role) {
         if (!role) {
           throw new UnauthorizedException();
         }
-        context.switchToHttp().getRequest().user = userForRole(role);
+        context.switchToHttp().getRequest().user = userForRole(role, shopId);
         return true;
       },
     })
@@ -160,3 +177,59 @@ describe('OrdersController (Preview Price)', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('OrdersController (List, Detail, Cancel)', () => {
+  let app: INestApplication;
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  // Test 13: GET /orders without JWT → 401
+  it('13. GET /orders without JWT → 401', async () => {
+    app = await createApp();
+    const res = await request(app.getHttpServer()).get('/orders');
+    expect(res.status).toBe(401);
+  });
+
+  // Test: GET /orders as CUSTOMER succeeds
+  it('GET /orders as CUSTOMER → 200', async () => {
+    app = await createApp(Role.CUSTOMER);
+    const res = await request(app.getHttpServer()).get('/orders');
+    expect(res.status).toBe(200);
+    expect(mockOrdersService.listOrders).toHaveBeenCalled();
+  });
+
+  // Test: GET /orders/:id as CUSTOMER succeeds
+  it('GET /orders/:id as CUSTOMER → 200 with queuePosition + etaMins', async () => {
+    app = await createApp(Role.CUSTOMER);
+    const res = await request(app.getHttpServer()).get('/orders/order-1');
+    expect(res.status).toBe(200);
+    expect(res.body.data.queuePosition).toBe(1);
+    expect(res.body.data.etaMins).toBe(5);
+  });
+
+  // Test 15: PATCH /orders/:id/cancel returns full updated Order
+  it('15. PATCH /orders/:id/cancel returns full updated Order', async () => {
+    app = await createApp(Role.CUSTOMER);
+    const res = await request(app.getHttpServer()).patch('/orders/order-1/cancel');
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('CANCELLED');
+    expect(mockOrdersService.cancelOrder).toHaveBeenCalled();
+  });
+
+  // PATCH /orders/:id/cancel without JWT → 401
+  it('PATCH /orders/:id/cancel without JWT → 401', async () => {
+    app = await createApp();
+    const res = await request(app.getHttpServer()).patch('/orders/order-1/cancel');
+    expect(res.status).toBe(401);
+  });
+
+  // STAFF cannot call PATCH /orders/:id/cancel → 403
+  it('STAFF cannot PATCH /orders/:id/cancel → 403', async () => {
+    app = await createApp(Role.STAFF, 'shop-1');
+    const res = await request(app.getHttpServer()).patch('/orders/order-1/cancel');
+    expect(res.status).toBe(403);
+  });
+});
+
