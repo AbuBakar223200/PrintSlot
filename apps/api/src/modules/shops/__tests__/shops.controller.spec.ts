@@ -136,4 +136,17 @@ describe('ShopsController', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('GET /shops/:id/analytics with SHOP_OWNER succeeds', async () => {
+    app = await createApp(Role.SHOP_OWNER);
+    const res = await request(app.getHttpServer()).get('/shops/shop-1/analytics?date=2026-06-07');
+    expect(res.status).toBe(200);
+    expect(shopsService.getAnalytics).toHaveBeenCalledWith('shop-1', 'owner-1', '2026-06-07');
+  });
+
+  it('GET /shops/:id/analytics with non-SHOP_OWNER returns 403', async () => {
+    app = await createApp(Role.CUSTOMER);
+    const res = await request(app.getHttpServer()).get('/shops/shop-1/analytics');
+    expect(res.status).toBe(403);
+  });
 });
