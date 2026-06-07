@@ -18,7 +18,8 @@
 | Slice 03 | #11 | Mobile profile screen + push device registration on launch | Closed | Merged in PR #49 at 2026-05-19; mobile/API lint pass, mobile/API tests pass. |
 | Slice 04 | #12 | ShopsService - CRUD + status transitions | Closed | Merged in PR #53 at 2026-05-19 via integration issue #54; API lint + 69/69 tests pass. |
 | Slice 05 | #13 | Customer shop list screen | Closed | Merged in PR #51 at 2026-05-19 via integration issue #54; mobile lint + 46/46 tests pass. |
-| Slice 07 | #15 | SlotsModule - templates + ShopSlots + active slot detection | Open | GitHub issue #15 is `OPEN` as of 2026-05-20; implementation branch `ihm/feat/slots-module-api`. |
+| Slice 07 | #15 | SlotsModule - templates + ShopSlots + active slot detection | Closed | GitHub issue #15 is `CLOSED`; merged in PR #57; closed as completed on 2026-06-07. |
+| Slice 08 | #16 | Customer slot picker component | Open | GitHub issue #16 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/slot-picker-component-mobile`. |
 
 ## Agent Rules
 
