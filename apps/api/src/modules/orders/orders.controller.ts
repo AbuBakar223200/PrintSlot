@@ -6,6 +6,7 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PreviewPriceDto, PreviewPriceSchema } from './dto/preview-price.dto';
 import { CreateOrderDto, CreateOrderSchema } from './dto/create-order.dto';
+import { UpdateOrderStatusDto, UpdateOrderStatusSchema } from './dto/update-order-status.dto';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -61,4 +62,16 @@ export class OrdersController {
   ): Promise<any> {
     return this.ordersService.cancelOrder(id, req.user);
   }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STAFF, Role.SHOP_OWNER)
+  advanceStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateOrderStatusSchema)) dto: UpdateOrderStatusDto,
+  ): Promise<any> {
+    return this.ordersService.advanceStatus(id, dto, req.user);
+  }
 }
+

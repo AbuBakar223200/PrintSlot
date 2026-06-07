@@ -156,6 +156,35 @@ async function main() {
   });
   console.log(`✓ Active Shop upserted (id=${shop.id})`);
 
+  // ── 6b. Create test Staff in Supabase Auth + DB
+  const testStaffEmail = 'staff@printslot.com';
+  const testStaffPassword = 'Staff123';
+  let staffId: string;
+
+  const existingStaff = listData.users.find((u) => u.email === testStaffEmail);
+  if (existingStaff) {
+    staffId = existingStaff.id;
+    await supabase.auth.admin.updateUserById(staffId, { password: testStaffPassword });
+    console.log(`✓ Test Staff already exists (id=${staffId}) — password reset`);
+  } else {
+    const { data: createdStaff, error: staffErr } =
+      await supabase.auth.admin.createUser({
+        email: testStaffEmail,
+        password: testStaffPassword,
+        email_confirm: true,
+      });
+    if (staffErr) throw new Error(`Staff createUser failed: ${staffErr.message}`);
+    staffId = createdStaff.user.id;
+    console.log(`✓ Test Staff created (id=${staffId})`);
+  }
+
+  await prisma.user.upsert({
+    where: { id: staffId },
+    create: { id: staffId, email: testStaffEmail, name: 'Test Staff', role: 'STAFF', shopId: shop.id },
+    update: { role: 'STAFF', shopId: shop.id },
+  });
+  console.log('✓ Test Staff User row upserted');
+
   // ── 8. Create Slot Template (09:00–17:00 all-day window)
   let template = await prisma.slotTemplate.findFirst({
     where: { startTime: '09:00', endTime: '23:59', deletedAt: null },
@@ -215,8 +244,8 @@ async function main() {
   console.log('\n── Test Credentials ──');
   console.log(`Customer: ${testCustomerEmail} / ${testCustomerPassword}`);
   console.log(`Owner:    ${testOwnerEmail} / ${testOwnerPassword}`);
+  console.log(`Staff:    ${testStaffEmail} / ${testStaffPassword}`);
   console.log(`Admin:    ${adminEmail} / ${adminPassword}`);
-  console.log(`Shop ID:  ${shop.id}`);
   console.log(`Shop ID:  ${shop.id}`);
   console.log(`Slot ID:  ${slot.id}`);
 }
