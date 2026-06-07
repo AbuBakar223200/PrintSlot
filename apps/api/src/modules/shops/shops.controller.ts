@@ -93,7 +93,8 @@ export class ShopsController {
   getAnalytics(
     @Param('id') shopId: string,
     @CurrentUser() user: { id: string },
-  ): Promise<never> {
-    return this.shopsService.getAnalytics(shopId, user.id);
+    @Query('date') date?: string,
+  ) {
+    return this.shopsService.getAnalytics(shopId, user.id, date);
   }
 }

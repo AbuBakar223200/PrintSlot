@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  NotImplementedException,
 } from '@nestjs/common';
 import {
   ShopStatus,
@@ -210,10 +209,75 @@ export class ShopsService {
     return this.mapToSharedShop(updated);
   }
 
-  async getAnalytics(shopId: string, ownerId: string): Promise<never> {
+  async getAnalytics(shopId: string, ownerId: string, dateStr?: string): Promise<{
+    date: string;
+    totalOrders: number;
+    revenue: number;
+    byStatus: Record<string, number>;
+    avgProcessingMins: number | null;
+  }> {
     const shop = await this.findShopOrThrow(shopId);
     this.assertOwner(shop, ownerId);
-    throw new NotImplementedException('Shop analytics deferred to Slice 27.');
+
+    const bstOffsetMs = 6 * 60 * 60 * 1000;
+    let dateForQuery: string;
+    if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      dateForQuery = dateStr;
+    } else {
+      const bstNow = new Date(Date.now() + bstOffsetMs);
+      dateForQuery = bstNow.toISOString().slice(0, 10);
+    }
+
+    const startUtc = new Date(`${dateForQuery}T00:00:00+06:00`);
+    const endUtc = new Date(startUtc.getTime() + 24 * 60 * 60 * 1000);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        shopId,
+        createdAt: { gte: startUtc, lt: endUtc },
+      },
+      select: {
+        status: true,
+        totalPrice: true,
+        processingStartedAt: true,
+        readyAt: true,
+      },
+    });
+
+    const totalOrders = orders.length;
+
+    let revenue = 0;
+    const byStatus: Record<string, number> = {};
+    let processingMinsSum = 0;
+    let collectedWithTimesCount = 0;
+
+    for (const order of orders) {
+      byStatus[order.status] = (byStatus[order.status] ?? 0) + 1;
+
+      if (order.status === 'COLLECTED') {
+        revenue += Number(order.totalPrice);
+
+        if (order.processingStartedAt && order.readyAt) {
+          const diffMins =
+            (order.readyAt.getTime() - order.processingStartedAt.getTime()) / 60000;
+          processingMinsSum += diffMins;
+          collectedWithTimesCount++;
+        }
+      }
+    }
+
+    const avgProcessingMins =
+      collectedWithTimesCount > 0
+        ? Math.round(processingMinsSum / collectedWithTimesCount)
+        : null;
+
+    return {
+      date: dateForQuery,
+      totalOrders,
+      revenue: Math.round(revenue * 100) / 100,
+      byStatus,
+      avgProcessingMins,
+    };
   }
 
   private async findShopOrThrow(shopId: string): Promise<PrismaShopShape> {
