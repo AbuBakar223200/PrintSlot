@@ -1,21 +1,22 @@
 import React from 'react';
+import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ColorMode, Orientation, PaperSize, type PrintConfig } from '@printslot/shared';
 import { FilePickerCard } from '../components/FilePickerCard';
 import type { WizardFile } from '../types';
 
 jest.mock('expo-image', () => {
-  const { Image } = require('react-native');
+  const { Image } = jest.requireActual<typeof import('react-native')>('react-native');
 
   return { Image };
 });
 
 jest.mock('@/components/shared/PrintConfigForm', () => ({
   PrintConfigForm: () => {
-    const React = require('react');
-    const { Text } = require('react-native');
+    const ReactActual = jest.requireActual<typeof import('react')>('react');
+    const { Text } = jest.requireActual<typeof import('react-native')>('react-native');
 
-    return React.createElement(Text, null, 'PrintConfigForm mock');
+    return ReactActual.createElement(Text, null, 'PrintConfigForm mock');
   },
 }));
 

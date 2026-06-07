@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { uploadFile } from '../services/uploadService';
 
 jest.mock('@/config/env', () => ({
@@ -9,8 +10,15 @@ jest.mock('@/features/auth/session/authSession', () => ({
   authSession: { getAccessToken: () => 'test-token' },
 }));
 
-const fetchMock = jest.fn();
-(global as unknown as { fetch: jest.Mock }).fetch = fetchMock;
+type MockFetchResponse = {
+  ok: boolean;
+  json: () => Promise<unknown>;
+};
+
+type MockFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<MockFetchResponse>;
+
+const fetchMock = jest.fn<MockFetch>();
+globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 type FormDataPart = {
   fieldName: string;
@@ -27,7 +35,7 @@ class MockFormData {
   }
 }
 
-(global as unknown as { FormData: typeof MockFormData }).FormData = class extends MockFormData {
+(globalThis as unknown as { FormData: typeof MockFormData }).FormData = class extends MockFormData {
   constructor() {
     super();
     formDataInstances.push(this);
@@ -66,10 +74,12 @@ describe('uploadService.uploadFile', () => {
     await uploadFile('file:///tmp/syllabus.pdf', 'syllabus.pdf', 'application/pdf');
 
     const [url, init] = fetchMock.mock.calls[0];
+    const requestInit = init as RequestInit;
+
     expect(url).toBe('https://api.test/upload');
-    expect(init.method).toBe('POST');
-    expect(init.headers).toEqual({ Authorization: 'Bearer test-token' });
-    expect(init.body).toBe(formDataInstances[0]);
+    expect(requestInit.method).toBe('POST');
+    expect(requestInit.headers).toEqual({ Authorization: 'Bearer test-token' });
+    expect(requestInit.body).toBe(formDataInstances[0]);
     expect(formDataInstances[0].parts).toEqual([
       {
         fieldName: 'file',
