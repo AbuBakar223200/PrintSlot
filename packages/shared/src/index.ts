@@ -9,7 +9,15 @@ export type { Shop, ShopListResult } from './types/shop.types';
 export type { ShopSlot, Slot, SlotTemplate } from './types/slot.types';
 export type { UploadedFile } from './types/upload.types';
 export type { WalletTransaction, WalletTransactionsResult } from './types/wallet.types';
-export type { PrintConfig } from './types/order.types';
+export type {
+  CreateOrderFileInput,
+  CreateOrderInput,
+  Order,
+  OrderFile,
+  PreviewPriceFileInput,
+  PreviewPriceInput,
+  PrintConfig,
+} from './types/order.types';
 
 // Contracts
 export {
