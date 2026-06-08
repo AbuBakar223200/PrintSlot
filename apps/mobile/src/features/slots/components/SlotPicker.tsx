@@ -110,18 +110,19 @@ export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
       ) : null}
 
       {!isLoading && !isError && slots.length > 0 ? (
-        <FlashList
-          contentContainerStyle={styles.slotListContent}
-          data={slots}
-          estimatedItemSize={148}
-          extraData={value}
-          horizontal
-          keyExtractor={keyExtractor}
-          renderItem={renderSlot}
-          showsHorizontalScrollIndicator={false}
-          style={styles.slotList}
-          testID="slot-picker-slot-list"
-        />
+        <View style={styles.slotList}>
+          <FlashList
+            contentContainerStyle={styles.slotListContent}
+            data={slots}
+            estimatedItemSize={148}
+            extraData={value}
+            horizontal
+            keyExtractor={keyExtractor}
+            renderItem={renderSlot}
+            showsHorizontalScrollIndicator={false}
+            testID="slot-picker-slot-list"
+          />
+        </View>
       ) : null}
     </View>
   );

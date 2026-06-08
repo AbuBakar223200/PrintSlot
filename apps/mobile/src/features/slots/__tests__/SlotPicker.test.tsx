@@ -157,6 +157,18 @@ describe('SlotPicker', () => {
     expect(mockLastFlashListProps.extraData).toBe('slot-1');
   });
 
+  it('does not pass unsupported style props to FlashList', async () => {
+    mockApiFetch.mockResolvedValueOnce([slot]);
+
+    const { getByTestId } = renderSlotPicker();
+
+    await waitFor(() => {
+      expect(getByTestId('slot-picker-slot-list')).toBeTruthy();
+    });
+
+    expect(mockLastFlashListProps.style).toBeUndefined();
+  });
+
   it('renders an empty state when the API returns no slots', async () => {
     mockApiFetch.mockResolvedValueOnce([]);
 
