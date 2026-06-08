@@ -5,6 +5,8 @@ import type { Slot } from '@printslot/shared';
 import { apiFetch } from '@/services/api';
 import { SlotPicker } from '../components/SlotPicker';
 
+let mockLastFlashListProps: any;
+
 jest.mock('@/services/api', () => ({
   apiFetch: jest.fn(),
 }));
@@ -14,17 +16,22 @@ jest.mock('@shopify/flash-list', () => {
   const { View } = require('react-native');
 
   return {
-    FlashList: ({ data, keyExtractor, ListEmptyComponent, renderItem, testID }: any) => (
-      <View testID={testID}>
-        {data.length === 0
-          ? ListEmptyComponent
-          : data.map((item: unknown, index: number) => (
-            <React.Fragment key={keyExtractor(item, index)}>
-              {renderItem({ item, index })}
-            </React.Fragment>
-          ))}
-      </View>
-    ),
+    FlashList: (props: any) => {
+      mockLastFlashListProps = props;
+      const { data, keyExtractor, ListEmptyComponent, renderItem, testID } = props;
+
+      return (
+        <View testID={testID}>
+          {data.length === 0
+            ? ListEmptyComponent
+            : data.map((item: unknown, index: number) => (
+              <React.Fragment key={keyExtractor(item, index)}>
+                {renderItem({ item, index })}
+              </React.Fragment>
+            ))}
+        </View>
+      );
+    },
   };
 });
 
@@ -73,6 +80,7 @@ function renderSlotPicker(onChange = jest.fn()) {
 beforeEach(() => {
   jest.useFakeTimers({ now: new Date(2026, 5, 7, 10, 15) });
   mockApiFetch.mockReset();
+  mockLastFlashListProps = undefined;
 });
 
 afterEach(() => {
@@ -125,6 +133,28 @@ describe('SlotPicker', () => {
     fireEvent.press(getByTestId('slot-picker-slot-slot-1'));
 
     expect(onChange).toHaveBeenCalledWith('slot-1');
+  });
+
+  it('passes the selected slot id as list extraData so visible chips repaint', async () => {
+    mockApiFetch.mockResolvedValueOnce([slot]);
+    const client = createClient();
+    const onChange = jest.fn();
+
+    const tree = (value: string | null) => (
+      <QueryClientProvider client={client}>
+        <SlotPicker shopId="shop-1" value={value} onChange={onChange} />
+      </QueryClientProvider>
+    );
+
+    const { getByTestId, rerender } = render(tree(null));
+
+    await waitFor(() => {
+      expect(getByTestId('slot-picker-slot-slot-1')).toBeTruthy();
+    });
+
+    rerender(tree('slot-1'));
+
+    expect(mockLastFlashListProps.extraData).toBe('slot-1');
   });
 
   it('renders an empty state when the API returns no slots', async () => {

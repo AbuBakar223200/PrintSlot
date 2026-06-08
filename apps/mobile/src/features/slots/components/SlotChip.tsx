@@ -49,7 +49,9 @@ function SlotChipComponent({
       testID={`slot-picker-slot-${id}`}
     >
       <View style={styles.content}>
-        <Text style={styles.time}>{timeRange}</Text>
+        <Text style={[styles.time, selected ? styles.selectedText : null]}>
+          {timeRange}
+        </Text>
         <Text style={[styles.remaining, selected ? styles.selectedRemaining : null]}>
           {remainingLabel}
         </Text>
@@ -74,8 +76,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   selected: {
+    backgroundColor: colors.primary,
     borderColor: colors.primary,
-    borderWidth: 2,
   },
   pressed: {
     opacity: 0.9,
@@ -93,8 +95,11 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     color: colors.textSecondary,
   },
+  selectedText: {
+    color: colors.textInverse,
+  },
   selectedRemaining: {
-    color: colors.primary,
-    fontWeight: '600',
+    color: colors.textInverse,
+    fontWeight: '700',
   },
 });

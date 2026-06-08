@@ -114,6 +114,7 @@ export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
           contentContainerStyle={styles.slotListContent}
           data={slots}
           estimatedItemSize={148}
+          extraData={value}
           horizontal
           keyExtractor={keyExtractor}
           renderItem={renderSlot}
