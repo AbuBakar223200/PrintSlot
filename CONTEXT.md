@@ -22,6 +22,7 @@ Use this to know which file to open before doing any work.
 | Coding rules, patterns, examples for NestJS + React Native | `docs/CODING_STANDARDS.md` |
 | Known risks and mitigations | `docs/07-risk-register.md` |
 | Implementation slice status and GitHub issue mapping | `docs/08-implementation-slices.md` |
+| UI/UX design system, tokens, per-screen spec (read before any mobile UI work) | docs/09-ui-ux-design-spec.md |
 | What is explicitly NOT being built in v1 | `docs/PRD.md` §4 (Non-Goals) — summary below |
 
 ---
