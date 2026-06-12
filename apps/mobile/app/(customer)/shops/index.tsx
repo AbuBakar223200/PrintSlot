@@ -18,6 +18,8 @@ import {
 import { spacing, useThemeTokens } from '@/theme';
 import { useShops } from '@/features/shops/hooks/useShops';
 import { useDebounce } from '@/hooks/useDebounce';
+import { CustomerTabBar, CUSTOMER_TAB_BAR_HEIGHT } from '@/components/shared/CustomerTabBar';
+import { useUnreadCount } from '@/features/notifications/hooks/useNotifications';
 
 const EMPTY_SHOPS: Shop[] = [];
 const SKELETON_ROWS = ['s1', 's2', 's3', 's4'];
@@ -40,6 +42,7 @@ function SkeletonRow() {
 
 export default function CustomerShopListScreen() {
   const tokens = useThemeTokens();
+  const unreadCount = useUnreadCount();
   const params = useLocalSearchParams<{ search?: string | string[] }>();
   const [search, setSearch] = useState(() => getInitialSearch(params.search));
   const debouncedSearch = useDebounce(search, 300);
@@ -77,34 +80,41 @@ export default function CustomerShopListScreen() {
 
   if (isLoading) {
     return (
-      <Screen contentContainerStyle={styles.padded}>
-        {header}
-        <View style={styles.list}>
-          {SKELETON_ROWS.map((id) => <SkeletonRow key={id} />)}
-        </View>
-      </Screen>
+      <View style={styles.root}>
+        <Screen contentContainerStyle={styles.padded}>
+          {header}
+          <View style={styles.list}>
+            {SKELETON_ROWS.map((id) => <SkeletonRow key={id} />)}
+          </View>
+        </Screen>
+        <CustomerTabBar active="home" unreadCount={unreadCount} />
+      </View>
     );
   }
 
   if (isError && shops.length === 0) {
     return (
-      <Screen contentContainerStyle={styles.padded}>
-        {header}
-        <Card style={styles.errorCard}>
-          <Text variant="h3" color="textPrimary" align="center">Could not load shops</Text>
-          <Text variant="bodySm" color="textSecondary" align="center">
-            Please try again in a moment.
-          </Text>
-          <Button onPress={retry} size="md" style={styles.retry} testID="shops-retry-button">
-            <ButtonText>Retry</ButtonText>
-          </Button>
-        </Card>
-      </Screen>
+      <View style={styles.root}>
+        <Screen contentContainerStyle={styles.padded}>
+          {header}
+          <Card style={styles.errorCard}>
+            <Text variant="h3" color="textPrimary" align="center">Could not load shops</Text>
+            <Text variant="bodySm" color="textSecondary" align="center">
+              Please try again in a moment.
+            </Text>
+            <Button onPress={retry} size="md" style={styles.retry} testID="shops-retry-button">
+              <ButtonText>Retry</ButtonText>
+            </Button>
+          </Card>
+        </Screen>
+        <CustomerTabBar active="home" unreadCount={unreadCount} />
+      </View>
     );
   }
 
   return (
-    <Screen scroll={false}>
+    <View style={styles.root}>
+      <Screen scroll={false}>
       <FlashList
         contentContainerStyle={styles.listContent}
         data={shops}
@@ -128,7 +138,9 @@ export default function CustomerShopListScreen() {
         renderItem={renderShop}
         showsVerticalScrollIndicator={false}
       />
-    </Screen>
+      </Screen>
+      <CustomerTabBar active="home" unreadCount={unreadCount} />
+    </View>
   );
 }
 
@@ -137,8 +149,12 @@ function Separator() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   padded: {
     padding: spacing.xl,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
     gap: spacing.lg,
   },
   header: {
@@ -147,7 +163,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
   },
   list: {
     gap: spacing.md,

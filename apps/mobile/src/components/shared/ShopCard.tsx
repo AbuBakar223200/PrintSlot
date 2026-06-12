@@ -1,5 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { MapPin } from 'lucide-react-native';
 import { radii, spacing, useThemeTokens } from '@/theme';
 import { Text } from '@/components/ui';
 
@@ -41,12 +42,18 @@ function ShopCardComponent({ id, name, address, onPress }: ShopCardProps) {
         </Text>
       </View>
       <View style={styles.content}>
-        <Text variant="h3" color="textPrimary" numberOfLines={1}>
-          {name}
-        </Text>
-        <Text variant="bodySm" color="textSecondary" numberOfLines={2}>
-          {address}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text variant="h3" color="textPrimary" numberOfLines={1} style={styles.title}>
+            {name}
+          </Text>
+          <View style={[styles.activeDot, { backgroundColor: tokens.success }]} />
+        </View>
+        <View style={styles.addressRow}>
+          <MapPin size={14} color={tokens.textMuted} />
+          <Text variant="bodySm" color="textSecondary" numberOfLines={2} style={styles.title}>
+            {address}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -80,6 +87,24 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    gap: spacing.xs,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  title: {
+    flex: 1,
+  },
+  activeDot: {
+    borderRadius: radii.full,
+    height: 8,
+    width: 8,
+  },
+  addressRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing.xs,
   },
 });
