@@ -1,5 +1,4 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ColorMode, Orientation, PaperSize, type PrintConfig } from '@printslot/shared';
 import { OrderCreationWizardScreen } from '../screens/OrderCreationWizardScreen';
@@ -89,7 +88,6 @@ function makeFile(): WizardFile {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.spyOn(Alert, 'alert').mockImplementation(jest.fn());
   mockUsePreviewPrice.mockReturnValue({
     mutate: jest.fn(),
     data: undefined,
@@ -110,7 +108,7 @@ beforeEach(() => {
 
 describe('OrderCreationWizardScreen', () => {
   it('skips slot selection for queue mode', async () => {
-    const { getByTestId } = render(
+    const { getByTestId, getByText } = render(
       <OrderCreationWizardScreen shopId="shop-1" mode="QUEUE" />,
     );
 
@@ -141,7 +139,7 @@ describe('OrderCreationWizardScreen', () => {
     });
   });
 
-  it('shows top-up prompt when create order returns 402', async () => {
+  it('shows top-up sheet when create order returns 402', async () => {
     const mutate = jest.fn((_input, options) => {
       options.onError(Object.assign(new Error('Insufficient balance'), { statusCode: 402 }));
     });
@@ -150,7 +148,7 @@ describe('OrderCreationWizardScreen', () => {
       isPending: false,
     });
 
-    const { getByTestId } = render(
+    const { getByTestId, getByText } = render(
       <OrderCreationWizardScreen shopId="shop-1" mode="QUEUE" />,
     );
 
@@ -172,12 +170,8 @@ describe('OrderCreationWizardScreen', () => {
 
     fireEvent.press(getByTestId('order-wizard-place-order'));
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Insufficient balance',
-      'Top up your Wallet, then try placing the Order again.',
-      expect.arrayContaining([
-        expect.objectContaining({ text: 'Top up Wallet' }),
-      ]),
-    );
+    expect(getByText('Insufficient balance')).toBeTruthy();
+    expect(getByText('Top up your Wallet, then try placing the Order again.')).toBeTruthy();
+    expect(getByText('Top up Wallet')).toBeTruthy();
   });
 });

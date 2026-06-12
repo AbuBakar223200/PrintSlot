@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   BackHandler,
   Pressable,
   ScrollView,
@@ -19,7 +18,7 @@ import {
   type PreviewPriceInput,
   type PricedOrderFile,
 } from '@printslot/shared';
-import { Button, ButtonText, Text } from '@/components/ui';
+import { AmbientBackground, Button, ButtonText, Card, Sheet, Text } from '@/components/ui';
 import { radii, spacing, useThemeTokens } from '@/theme';
 import { FilePickerSection } from '@/features/upload/components/FilePickerSection';
 import { SlotPicker } from '@/features/slots/components/SlotPicker';
@@ -44,6 +43,13 @@ export interface OrderCreationWizardScreenProps {
 }
 
 type ApiStatusError = Error & { statusCode?: number };
+type WizardSheet = {
+  title: string;
+  body: string;
+  primaryLabel?: string;
+  primaryAction?: () => void;
+  danger?: boolean;
+} | null;
 
 type PreviewRow = {
   id: string;
@@ -210,6 +216,7 @@ export function OrderCreationWizardScreen({
   mode,
 }: OrderCreationWizardScreenProps) {
   const tokens = useThemeTokens();
+  const [sheet, setSheet] = React.useState<WizardSheet>(null);
   const storeShopId = useOrderWizardStore((state) => state.shopId);
   const storeMode = useOrderWizardStore((state) => state.mode);
   const step = useOrderWizardStore((state) => state.step);
@@ -253,23 +260,19 @@ export function OrderCreationWizardScreen({
   }, [mode, setStep, step]);
 
   const discardAndBack = useCallback(() => {
+    setSheet(null);
     reset();
     router.back();
   }, [reset]);
 
   const confirmDiscard = useCallback(() => {
-    Alert.alert(
-      orderWizardText(orderWizardKeys.discardTitle),
-      orderWizardText(orderWizardKeys.discardBody),
-      [
-        { text: orderWizardText(orderWizardKeys.keepEditing), style: 'cancel' },
-        {
-          text: orderWizardText(orderWizardKeys.discard),
-          style: 'destructive',
-          onPress: discardAndBack,
-        },
-      ],
-    );
+    setSheet({
+      title: orderWizardText(orderWizardKeys.discardTitle),
+      body: orderWizardText(orderWizardKeys.discardBody),
+      primaryLabel: orderWizardText(orderWizardKeys.discard),
+      primaryAction: discardAndBack,
+      danger: true,
+    });
   }, [discardAndBack]);
 
   useEffect(() => {
@@ -359,27 +362,26 @@ export function OrderCreationWizardScreen({
   }, [previewData, setStep, step]);
 
   const openWallet = useCallback(() => {
+    setSheet(null);
     router.push('/(customer)/wallet');
   }, []);
 
   const showCreateError = useCallback((error: ApiStatusError) => {
     if (error.statusCode === 402) {
-      Alert.alert(
-        orderWizardText(orderWizardKeys.insufficientTitle),
-        orderWizardText(orderWizardKeys.insufficientBody),
-        [
-          { text: orderWizardText(orderWizardKeys.keepEditing), style: 'cancel' },
-          { text: orderWizardText(orderWizardKeys.topUpWallet), onPress: openWallet },
-        ],
-      );
+      setSheet({
+        title: orderWizardText(orderWizardKeys.insufficientTitle),
+        body: orderWizardText(orderWizardKeys.insufficientBody),
+        primaryLabel: orderWizardText(orderWizardKeys.topUpWallet),
+        primaryAction: openWallet,
+      });
       return;
     }
 
     if (error.statusCode === 409) {
-      Alert.alert(
-        orderWizardText(orderWizardKeys.slotFullTitle),
-        orderWizardText(orderWizardKeys.slotFullBody),
-      );
+      setSheet({
+        title: orderWizardText(orderWizardKeys.slotFullTitle),
+        body: orderWizardText(orderWizardKeys.slotFullBody),
+      });
       setStep(1);
       return;
     }
@@ -387,21 +389,21 @@ export function OrderCreationWizardScreen({
     if (error.statusCode === 400) {
       const message = error.message.toLowerCase();
       const isShopInactive = message.includes('shop') && message.includes('active');
-      Alert.alert(
-        isShopInactive
+      setSheet({
+        title: isShopInactive
           ? orderWizardText(orderWizardKeys.shopUnavailableTitle)
           : orderWizardText(orderWizardKeys.noActiveSlotTitle),
-        isShopInactive
+        body: isShopInactive
           ? orderWizardText(orderWizardKeys.shopUnavailableBody)
           : orderWizardText(orderWizardKeys.noActiveSlotBody),
-      );
+      });
       return;
     }
 
-    Alert.alert(
-      orderWizardText(orderWizardKeys.genericErrorTitle),
-      orderWizardText(orderWizardKeys.genericErrorBody),
-    );
+    setSheet({
+      title: orderWizardText(orderWizardKeys.genericErrorTitle),
+      body: orderWizardText(orderWizardKeys.genericErrorBody),
+    });
   }, [openWallet, setStep]);
 
   const placeOrder = useCallback(() => {
@@ -432,6 +434,7 @@ export function OrderCreationWizardScreen({
     styles.totalRow,
     { backgroundColor: tokens.surface, borderColor: tokens.border },
   ];
+  const walletBalanceValue = walletBalance.data?.balance ?? 0;
 
   const renderPreviewRow = useCallback<ListRenderItem<PreviewRow>>(({ item }) => (
     <View style={[styles.previewRow, { borderBottomColor: tokens.border }]}>
@@ -456,7 +459,8 @@ export function OrderCreationWizardScreen({
 
   if (!shopId || !mode) {
     return (
-      <View style={[styles.container, { backgroundColor: tokens.bgGradient[1] }]}>
+      <View style={styles.container}>
+        <AmbientBackground />
         <View style={styles.centerState}>
           <Text variant="h2" color="textPrimary" align="center">
             {orderWizardText(orderWizardKeys.invalidTitle)}
@@ -481,10 +485,12 @@ export function OrderCreationWizardScreen({
         : false;
   const walletSelected = paymentMethod === 'WALLET';
   const cashSelected = paymentMethod === 'CASH';
-  const placeOrderDisabled = createInput === null || isCreatePending;
+  const walletDisabled = totalPrice !== null && walletBalanceValue < totalPrice;
+  const placeOrderDisabled = createInput === null || isCreatePending || (walletSelected && walletDisabled);
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.bgGradient[1] }]}>
+    <View style={styles.container}>
+      <AmbientBackground />
       <View style={[styles.header, { borderBottomColor: tokens.border }]}>
         <View>
           <Text variant="h2" color="textPrimary">{orderWizardText(orderWizardKeys.title)}</Text>
@@ -504,6 +510,17 @@ export function OrderCreationWizardScreen({
           </Text>
         </Pressable>
       </View>
+      <View style={styles.progressBars} accessibilityLabel="Order progress">
+        {[1, 2, 3, 4].map((item) => (
+          <View
+            key={item}
+            style={[
+              styles.progressBar,
+              { backgroundColor: item <= step ? tokens.primary : tokens.border },
+            ]}
+          />
+        ))}
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -516,13 +533,13 @@ export function OrderCreationWizardScreen({
         </View>
 
         {step === 1 ? (
-          <View style={[styles.section, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+          <Card style={styles.section}>
             <SlotPicker shopId={shopId} value={slotId} onChange={setSlot} />
-          </View>
+          </Card>
         ) : null}
 
         {step === 2 ? (
-          <View style={[styles.section, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+          <Card style={styles.section}>
             <FilePickerSection
               files={files}
               maxFiles={10}
@@ -530,11 +547,11 @@ export function OrderCreationWizardScreen({
               onChange={updateFile}
               onRemove={removeFile}
             />
-          </View>
+          </Card>
         ) : null}
 
         {step === 3 ? (
-          <View style={[styles.section, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+          <Card style={styles.section}>
             {isPreviewPending ? (
               <View style={styles.stateInline}>
                 <ActivityIndicator color={tokens.primary} />
@@ -573,19 +590,21 @@ export function OrderCreationWizardScreen({
                 </Text>
               </View>
             ) : null}
-          </View>
+          </Card>
         ) : null}
 
         {step === 4 ? (
-          <View style={[styles.section, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+          <Card style={styles.section}>
             <Pressable
               accessibilityLabel={orderWizardText(orderWizardKeys.wallet)}
               accessibilityRole="button"
+              disabled={walletDisabled}
               onPress={selectWallet}
               style={({ pressed }) => [
                 styles.paymentCard,
                 { backgroundColor: tokens.surface, borderColor: tokens.border },
                 walletSelected ? { borderColor: tokens.primary, borderWidth: 2 } : null,
+                walletDisabled ? styles.disabledPayment : null,
                 pressed ? styles.paymentCardPressed : null,
               ]}
               testID="order-wizard-wallet"
@@ -593,9 +612,14 @@ export function OrderCreationWizardScreen({
               <Text variant="h3" color="textPrimary">{orderWizardText(orderWizardKeys.wallet)}</Text>
               <Text variant="bodySm" color="textSecondary">
                 {orderWizardText(orderWizardKeys.walletBalance, {
-                  amount: formatCurrency(walletBalance.data?.balance ?? 0),
+                  amount: formatCurrency(walletBalanceValue),
                 })}
               </Text>
+              {walletDisabled ? (
+                <Text variant="caption" color="warn">
+                  {orderWizardText(orderWizardKeys.insufficientTitle)}
+                </Text>
+              ) : null}
             </Pressable>
 
             <Pressable
@@ -622,7 +646,7 @@ export function OrderCreationWizardScreen({
                 <Text variant="h2" color="primary" tabular>{formatCurrency(totalPrice)}</Text>
               </View>
             ) : null}
-          </View>
+          </Card>
         ) : null}
       </ScrollView>
 
@@ -664,6 +688,24 @@ export function OrderCreationWizardScreen({
           </Button>
         )}
       </View>
+      <Sheet visible={sheet !== null} onClose={() => setSheet(null)}>
+        {sheet ? (
+          <View style={styles.sheetContent}>
+            <Text variant="h2" color="textPrimary">{sheet.title}</Text>
+            <Text variant="body" color="textSecondary">{sheet.body}</Text>
+            <View style={styles.sheetActions}>
+              <Button variant="secondary" onPress={() => setSheet(null)}>
+                <ButtonText>{orderWizardText(orderWizardKeys.keepEditing)}</ButtonText>
+              </Button>
+              {sheet.primaryLabel ? (
+                <Button variant={sheet.danger ? 'danger' : 'primary'} onPress={sheet.primaryAction}>
+                  <ButtonText>{sheet.primaryLabel}</ButtonText>
+                </Button>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+      </Sheet>
     </View>
   );
 }
@@ -682,6 +724,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
   },
+  progressBars: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  progressBar: {
+    borderRadius: radii.full,
+    flex: 1,
+    height: 5,
+  },
   cancelButton: {
     borderCurve: 'continuous',
     borderRadius: radii.control,
@@ -698,11 +751,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   section: {
-    borderCurve: 'continuous',
-    borderRadius: radii.card,
-    borderWidth: 1,
     gap: spacing.lg,
-    padding: spacing.lg,
   },
   centerState: {
     alignItems: 'center',
@@ -755,6 +804,9 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 0.99 }],
   },
+  disabledPayment: {
+    opacity: 0.52,
+  },
   footer: {
     alignItems: 'center',
     borderTopWidth: 1,
@@ -764,5 +816,13 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
+  },
+  sheetContent: {
+    gap: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  sheetActions: {
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
 });
