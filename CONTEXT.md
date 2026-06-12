@@ -2,6 +2,12 @@
 
 Read this before touching any file.
 
+> **🎨 UI Ground Truth (mobile).** For ANY mobile UI work, two references are authoritative and must be read first:
+> 1. **`docs/09-ui-ux-design-spec.md`** — the locked design system + per-screen spec.
+> 2. **`prototype/`** — the interactive high-fidelity prototype (open `prototype/index.html`); the visual source of truth.
+>
+> **Precedence on conflict:** the **prototype + spec define the visual / interaction design**; the **PRD / CONTEXT / `docs/05-api-contract.md` define behavior & feature scope**. If they disagree, **PRD wins for behavior, the prototype wins for look** (e.g. the prototype's customer wallet "Top Up" button is a demo artifact the PRD forbids — it stays out). Never ship UI that diverges from these two.
+
 ---
 
 ## Document Map
