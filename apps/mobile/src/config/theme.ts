@@ -1,8 +1,17 @@
 /**
- * PrintSlot Design System Tokens.
+ * PrintSlot Design System Tokens — LEGACY (pre-Phase-0).
  *
  * Premium dark theme with vibrant orange accent.
- * Used across all components — never hardcode colors inline.
+ *
+ * DEPRECATED: This module is retained only for backward compatibility with the
+ * five already-built screens (login, register, shop list, shop detail, profile)
+ * that still import `{ colors, spacing, borderRadius, typography }` from here.
+ * Those screens migrate to the new semantic token system in later PRs.
+ *
+ * For all NEW code use the Phase-0 design system instead:
+ *   - Semantic light/dark tokens + `useThemeTokens()` → `@/theme`
+ *   - The `Text` primitive (font-by-language, tabular figures) → `@/components/ui`
+ * Do NOT add new consumers of this legacy palette.
  */
 export const colors = {
   // Brand
