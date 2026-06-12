@@ -30,7 +30,17 @@
       [
         "expo-font",
         {
-          "fonts": []
+          "fonts": [
+            "../../node_modules/@expo-google-fonts/inter/Inter_400Regular.ttf",
+            "../../node_modules/@expo-google-fonts/inter/Inter_500Medium.ttf",
+            "../../node_modules/@expo-google-fonts/inter/Inter_600SemiBold.ttf",
+            "../../node_modules/@expo-google-fonts/inter/Inter_700Bold.ttf",
+            "../../node_modules/@expo-google-fonts/inter/Inter_800ExtraBold.ttf",
+            "../../node_modules/@expo-google-fonts/hind-siliguri/HindSiliguri_400Regular.ttf",
+            "../../node_modules/@expo-google-fonts/hind-siliguri/HindSiliguri_500Medium.ttf",
+            "../../node_modules/@expo-google-fonts/hind-siliguri/HindSiliguri_600SemiBold.ttf",
+            "../../node_modules/@expo-google-fonts/hind-siliguri/HindSiliguri_700Bold.ttf"
+          ]
         }
       ]
     ],
