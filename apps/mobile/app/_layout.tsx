@@ -12,6 +12,20 @@ import { ToastHost } from '@/components/ui';
 import { initI18n } from '@/i18n';
 import { useLang } from '@/i18n/useLang';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+} from '@expo-google-fonts/inter';
+import {
+  HindSiliguri_400Regular,
+  HindSiliguri_500Medium,
+  HindSiliguri_600SemiBold,
+  HindSiliguri_700Bold,
+} from '@expo-google-fonts/hind-siliguri';
 
 // Initialize i18n once at module load with the initial language (Phase 0 / F6).
 initI18n(useSettingsStore.getState().language);
@@ -47,8 +61,24 @@ function AppShell() {
  * Root layout — app-wide providers. Route groups own their local auth redirects.
  */
 export default function RootLayout() {
+  // Load fonts at runtime so they work in Expo Go (the expo-font config plugin
+  // only embeds on a dev/prebuild client). Family names match @/theme/fonts.
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    HindSiliguri_400Regular,
+    HindSiliguri_500Medium,
+    HindSiliguri_600SemiBold,
+    HindSiliguri_700Bold,
+  });
+
   // Register this device's Expo push token once auth resolves (no-op until ready).
   useDeviceRegistration();
+
+  if (!fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={styles.flex}>
