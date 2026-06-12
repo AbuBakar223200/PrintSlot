@@ -6,7 +6,7 @@ import {
   Switch,
 } from 'react-native';
 import { ColorMode, PaperSize, Orientation, PrintConfig } from '@printslot/shared';
-import { Input, Text } from '@/components/ui';
+import { Input, SegmentedControl, Text } from '@/components/ui';
 import { radii, spacing, useThemeTokens } from '@/theme';
 import { parsePageRange } from '../../utils/pageRange';
 
@@ -92,95 +92,47 @@ export function PrintConfigForm({
     onChange({ ...value, pageRange: text === '' ? null : text });
   };
 
-  const trackStyle = [styles.segmentedContainer, { backgroundColor: tokens.tintSoft }];
   const surfaceCard = { backgroundColor: tokens.surface, borderColor: tokens.border };
-
-  const renderSegment = (
-    active: boolean,
-    label: string,
-    onPress: () => void,
-    testID: string,
-    accessibilityLabel: string,
-  ) => (
-    <Pressable
-      key={testID}
-      testID={testID}
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      style={[styles.segment, active ? { backgroundColor: tokens.surface } : null]}
-    >
-      <Text
-        variant="bodySm"
-        color={active ? 'primary' : 'textSecondary'}
-        style={active ? styles.bold : styles.semibold}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
 
   return (
     <View style={[styles.container, surfaceCard]}>
-      {/* 1. Color Mode Option */}
       <View style={styles.formGroup}>
         <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.colorMode}</Text>
-        <View style={trackStyle}>
-          {renderSegment(
-            value.colorMode === ColorMode.COLOR,
-            t.color,
-            () => handleColorModeChange(ColorMode.COLOR),
-            'color-mode-COLOR',
-            `Set Color Mode to ${t.color}`,
-          )}
-          {renderSegment(
-            value.colorMode === ColorMode.BW,
-            t.bw,
-            () => handleColorModeChange(ColorMode.BW),
-            'color-mode-BW',
-            `Set Color Mode to ${t.bw}`,
-          )}
-        </View>
+        <SegmentedControl
+          getOptionTestID={(option) => `color-mode-${option}`}
+          onChange={handleColorModeChange}
+          options={[
+            { value: ColorMode.COLOR, label: t.color },
+            { value: ColorMode.BW, label: t.bw },
+          ]}
+          value={value.colorMode}
+        />
       </View>
 
-      {/* 2. Paper Size Option */}
       <View style={styles.formGroup}>
         <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.paperSize}</Text>
-        <View style={trackStyle}>
-          {Object.values(PaperSize).map((size) =>
-            renderSegment(
-              value.paperSize === size,
-              size,
-              () => handlePaperSizeChange(size),
-              `paper-size-${size}`,
-              `Set Paper Size to ${size}`,
-            ),
-          )}
-        </View>
+        <SegmentedControl
+          getOptionTestID={(option) => `paper-size-${option}`}
+          onChange={handlePaperSizeChange}
+          options={Object.values(PaperSize).map((size) => ({ value: size, label: size }))}
+          value={value.paperSize}
+        />
       </View>
 
-      {/* 3. Orientation Option */}
       <View style={styles.formGroup}>
         <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.orientation}</Text>
-        <View style={trackStyle}>
-          {renderSegment(
-            value.orientation === Orientation.PORTRAIT,
-            t.portrait,
-            () => handleOrientationChange(Orientation.PORTRAIT),
-            'orientation-PORTRAIT',
-            `Set Orientation to ${t.portrait}`,
-          )}
-          {renderSegment(
-            value.orientation === Orientation.LANDSCAPE,
-            t.landscape,
-            () => handleOrientationChange(Orientation.LANDSCAPE),
-            'orientation-LANDSCAPE',
-            `Set Orientation to ${t.landscape}`,
-          )}
-        </View>
+        <SegmentedControl
+          getOptionTestID={(option) => `orientation-${option}`}
+          onChange={handleOrientationChange}
+          options={[
+            { value: Orientation.PORTRAIT, label: t.portrait },
+            { value: Orientation.LANDSCAPE, label: t.landscape },
+          ]}
+          value={value.orientation}
+        />
       </View>
 
       <View style={styles.row}>
-        {/* 4. Copies Stepper Option */}
         <View style={[styles.formGroup, { flex: 1 }]}>
           <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.copies}</Text>
           <View style={[styles.stepperContainer, surfaceCard]}>
@@ -216,7 +168,6 @@ export function PrintConfigForm({
           </View>
         </View>
 
-        {/* 5. Duplex Option */}
         <View style={[styles.duplexContainer, surfaceCard]}>
           <Text variant="bodySm" color="textSecondary" style={styles.semibold}>{t.doubleSided}</Text>
           <Switch
@@ -230,7 +181,6 @@ export function PrintConfigForm({
         </View>
       </View>
 
-      {/* 6. Page Range Option */}
       <View style={styles.formGroup}>
         <Input
           testID="page-range-input"
@@ -243,7 +193,6 @@ export function PrintConfigForm({
           autoCorrect={false}
           error={errorStr}
         />
-        {/* Info or Hint Text without leaking raw falsy logic */}
         {totalPages !== null && totalPages > 0 ? (
           <Text variant="caption" color="textMuted" style={styles.helperText}>
             {totalPages} {t.pagesDetected}
@@ -278,21 +227,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: spacing.xs,
     marginBottom: spacing.xs,
-  },
-  segmentedContainer: {
-    flexDirection: 'row',
-    borderRadius: radii.control,
-    borderCurve: 'continuous',
-    padding: spacing.xs,
-    gap: spacing.xs,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm,
-    borderCurve: 'continuous',
   },
   stepperContainer: {
     flexDirection: 'row',

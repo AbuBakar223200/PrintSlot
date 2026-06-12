@@ -13,6 +13,7 @@ export interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   style?: ViewStyle;
+  getOptionTestID?: (value: T) => string;
 }
 
 /**
@@ -24,6 +25,7 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   style,
+  getOptionTestID,
 }: SegmentedControlProps<T>) {
   const tokens = useThemeTokens();
 
@@ -34,6 +36,7 @@ export function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={opt.value}
+            testID={getOptionTestID?.(opt.value)}
             onPress={() => onChange(opt.value)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
