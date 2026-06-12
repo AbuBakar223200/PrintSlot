@@ -78,7 +78,7 @@ export function CustomerTabBar({ active, unreadCount = 0 }: CustomerTabBarProps)
                   <Icon size={22} color={color} />
                   {isNotifications && unreadCount > 0 ? (
                     <View style={[styles.badge, { backgroundColor: tokens.error }]}>
-                      <Text variant="caption" style={styles.badgeText} tabular>
+                      <Text variant="caption" style={[styles.badgeText, { color: tokens.onPrimary }]} tabular>
                         {String(Math.min(unreadCount, 99))}
                       </Text>
                     </View>
@@ -145,7 +145,6 @@ const styles = StyleSheet.create({
     top: -7,
   },
   badgeText: {
-    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 12,

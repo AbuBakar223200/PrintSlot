@@ -176,7 +176,7 @@ export function PrintConfigForm({
             value={value.duplex}
             onValueChange={handleDuplexChange}
             trackColor={{ false: tokens.border, true: tokens.primary }}
-            thumbColor="#FFFFFF"
+            thumbColor={tokens.onPrimary}
           />
         </View>
       </View>

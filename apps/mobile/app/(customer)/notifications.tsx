@@ -114,7 +114,7 @@ function Header({ unreadCount, onMarkAll }: { unreadCount: number; onMarkAll: ()
             Order, wallet, and shop updates.
           </Text>
         </View>
-        <Button size="sm" variant="secondary" disabled={unreadCount === 0} onPress={onMarkAll}>
+        <Button size="sm" variant="ghost" disabled={unreadCount === 0} onPress={onMarkAll}>
           <ButtonText>Mark all read</ButtonText>
         </Button>
       </View>
@@ -137,7 +137,7 @@ function NotificationRow({ item, onPress }: { item: NotificationItem; onPress: (
       onPress={onPress}
       style={({ pressed }) => [pressed ? styles.pressed : null]}
     >
-      <Card style={styles.row}>
+      <Card style={[styles.row, item.read ? null : { backgroundColor: tokens.tintSoft }]}>
         <View style={[styles.iconWrap, { backgroundColor: tone.bg }]}>
           <Icon size={18} color={tone.fg} />
         </View>

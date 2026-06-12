@@ -1,19 +1,19 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowDown, ArrowUp, Wallet } from 'lucide-react-native';
 import { TransactionType, type WalletTransaction } from '@printslot/shared';
 import {
   Banner,
   Card,
   EmptyState,
-  FrostCard,
   MoneyText,
   Screen,
   Skeleton,
   Text,
 } from '@/components/ui';
 import { CustomerTabBar, CUSTOMER_TAB_BAR_HEIGHT } from '@/components/shared/CustomerTabBar';
-import { spacing, useTheme, useThemeTokens } from '@/theme';
+import { radii, spacing, useTheme, useThemeTokens } from '@/theme';
 import { formatRelative } from '@/i18n/format';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useUnreadCount } from '@/features/notifications/hooks/useNotifications';
@@ -41,7 +41,13 @@ export default function CustomerWalletScreen() {
           <Text variant="body" color="textSecondary">Balance and payment activity.</Text>
         </View>
 
-        <FrostCard pad={24} style={styles.hero}>
+        <View style={[styles.hero, { shadowColor: tokens.primary }]}>
+          <LinearGradient
+            colors={tokens.gradientBrand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, styles.heroGradient]}
+          />
           <Text variant="label" style={styles.heroLabel}>Wallet balance</Text>
           {balance.isLoading ? (
             <Skeleton width="55%" height={42} />
@@ -50,11 +56,11 @@ export default function CustomerWalletScreen() {
               amount={balance.data?.balance ?? 0}
               color="onPrimary"
               variant="displayLg"
-              decimals={0}
+              decimals={2}
             />
           )}
           <Text variant="bodySm" style={styles.heroMuted}>Managed by PrintSlot ledger</Text>
-        </FrostCard>
+        </View>
 
         {lowBalance ? (
           <Banner tone="warn" icon={Wallet}>Low balance may block wallet payment.</Banner>
@@ -126,7 +132,19 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   hero: {
-    backgroundColor: 'transparent',
+    alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: radii.hero,
+    elevation: 8,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 24,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.34,
+    shadowRadius: 30,
+  },
+  heroGradient: {
+    borderRadius: radii.hero,
   },
   heroLabel: {
     color: 'rgba(255,255,255,0.82)',

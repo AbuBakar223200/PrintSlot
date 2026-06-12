@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "ui:parity": "node scripts/check-ui-parity.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/hind-siliguri": "0.2.3",
