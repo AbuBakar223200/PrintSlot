@@ -1,73 +1,23 @@
 import React, { createContext, useContext } from 'react';
 import {
-  Pressable,
-  Text,
-  View,
   ActivityIndicator,
+  Pressable,
   StyleSheet,
+  View,
   type ViewStyle,
-  type TextStyle,
 } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '@/config/theme';
-
-// ─── Variant system ────────────────────────────────────────────
+import { useThemeTokens } from '@/theme';
+import { Text } from '@/components/ui/Text';
+import type { TextVariant } from '@/theme/fonts';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface ButtonContextType {
-  variant: ButtonVariant;
+interface ButtonCtx {
+  textColor: string;
   size: ButtonSize;
-  disabled: boolean;
-  isLoading: boolean;
 }
-
-const ButtonContext = createContext<ButtonContextType>({
-  variant: 'primary',
-  size: 'md',
-  disabled: false,
-  isLoading: false,
-});
-
-// ─── Variant styles ────────────────────────────────────────────
-
-const variantStyles: Record<ButtonVariant, ViewStyle> = {
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  danger: {
-    backgroundColor: colors.error,
-  },
-};
-
-const variantTextColors: Record<ButtonVariant, string> = {
-  primary: colors.textInverse,
-  secondary: colors.primary,
-  ghost: colors.primary,
-  danger: '#FFFFFF',
-};
-
-const sizeStyles: Record<ButtonSize, ViewStyle> = {
-  sm: { minHeight: 36, paddingHorizontal: spacing.md },
-  md: { minHeight: 48, paddingHorizontal: spacing.xl },
-  lg: { minHeight: 56, paddingHorizontal: spacing['2xl'] },
-};
-
-const sizeTextStyles: Record<ButtonSize, TextStyle> = {
-  sm: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
-  md: { ...typography.button },
-  lg: { fontSize: 18, fontWeight: '700', lineHeight: 28 },
-};
-
-// ─── Button (root) ─────────────────────────────────────────────
+const Ctx = createContext<ButtonCtx>({ textColor: '#FFFFFF', size: 'md' });
 
 export interface ButtonProps {
   children: React.ReactNode;
@@ -77,19 +27,19 @@ export interface ButtonProps {
   isLoading?: boolean;
   onPress?: () => void;
   style?: ViewStyle;
-  /** Unique identifier for testing */
   testID?: string;
+  accessibilityLabel?: string;
 }
 
+const SIZE: Record<ButtonSize, { minHeight: number; px: number; variant: TextVariant; block: boolean }> = {
+  sm: { minHeight: 40, px: 14, variant: 'label', block: false },
+  md: { minHeight: 50, px: 20, variant: 'button', block: true },
+  lg: { minHeight: 56, px: 24, variant: 'button', block: true },
+};
+
 /**
- * Compound button component.
- *
- * Usage:
- * ```
- * <Button onPress={handleLogin} isLoading={isPending}>
- *   <ButtonText>Sign In</ButtonText>
- * </Button>
- * ```
+ * F5 — `Button` (retuned to indigo tokens). Compound: `Button` + `ButtonText` +
+ * `ButtonIcon`. Press-scale 0.97 (§6). Variants primary/secondary/ghost/danger.
  */
 export function Button({
   children,
@@ -100,95 +50,85 @@ export function Button({
   onPress,
   style,
   testID,
+  accessibilityLabel,
 }: ButtonProps) {
+  const tokens = useThemeTokens();
   const isDisabled = disabled || isLoading;
+  const sz = SIZE[size];
+
+  const backgroundColor =
+    variant === 'primary' ? tokens.primary : variant === 'danger' ? tokens.error : 'transparent';
+  const borderColor =
+    variant === 'secondary' ? tokens.primary : variant === 'ghost' ? tokens.border : 'transparent';
+  const borderWidth = variant === 'secondary' || variant === 'ghost' ? 1.5 : 0;
+  const textColor =
+    variant === 'primary' || variant === 'danger' ? tokens.onPrimary : tokens.primary;
 
   return (
-    <ButtonContext.Provider value={{ variant, size, disabled: isDisabled, isLoading }}>
+    <Ctx.Provider value={{ textColor, size }}>
       <Pressable
         onPress={onPress}
         disabled={isDisabled}
         testID={testID}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled, busy: isLoading }}
+        accessibilityLabel={accessibilityLabel}
         style={({ pressed }) => [
-          styles.root,
-          variantStyles[variant],
-          sizeStyles[size],
+          styles.base,
+          {
+            minHeight: sz.minHeight,
+            paddingHorizontal: sz.px,
+            width: sz.block ? '100%' : undefined,
+            alignSelf: sz.block ? undefined : 'flex-start',
+            backgroundColor,
+            borderColor,
+            borderWidth,
+          },
           isDisabled ? styles.disabled : null,
           pressed && !isDisabled ? styles.pressed : null,
           style,
         ]}
       >
         {isLoading ? (
-          <ActivityIndicator
-            size="small"
-            color={variantTextColors[variant]}
-          />
+          <ActivityIndicator size="small" color={textColor} />
         ) : (
           <View style={styles.content}>{children}</View>
         )}
       </Pressable>
-    </ButtonContext.Provider>
+    </Ctx.Provider>
   );
 }
 
-// ─── ButtonText ────────────────────────────────────────────────
-
 export interface ButtonTextProps {
   children: string;
-  style?: TextStyle;
 }
-
-export function ButtonText({ children, style }: ButtonTextProps) {
-  const { variant, size } = useContext(ButtonContext);
-
+export function ButtonText({ children }: ButtonTextProps) {
+  const { textColor, size } = useContext(Ctx);
   return (
-    <Text
-      style={[
-        sizeTextStyles[size],
-        { color: variantTextColors[variant] },
-        style,
-      ]}
-    >
+    <Text variant={SIZE[size].variant} style={{ color: textColor }}>
       {children}
     </Text>
   );
 }
 
-// ─── ButtonIcon ────────────────────────────────────────────────
-
 export interface ButtonIconProps {
   children: React.ReactNode;
 }
-
 export function ButtonIcon({ children }: ButtonIconProps) {
   return <View style={styles.icon}>{children}</View>;
 }
 
-// ─── Styles ────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  root: {
+  base: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.md,
+    gap: 8,
+    borderRadius: 12,
     borderCurve: 'continuous',
-    gap: spacing.sm,
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
-  },
-  icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  content: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  disabled: { opacity: 0.5 },
+  pressed: { opacity: 0.9, transform: [{ scale: 0.97 }] },
+  icon: { alignItems: 'center', justifyContent: 'center' },
 });
