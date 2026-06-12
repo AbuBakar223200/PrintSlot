@@ -1,8 +1,12 @@
-import type { WalletBalance } from '@printslot/shared';
+import type { WalletBalance, WalletTransactionsResult } from '@printslot/shared';
 import { apiFetch } from '@/services/api';
 
 export const walletService = {
   getBalance(): Promise<WalletBalance> {
-    return apiFetch<WalletBalance>('/wallet/balance');
+    return apiFetch<WalletBalance>('/wallet');
+  },
+
+  getTransactions(): Promise<WalletTransactionsResult> {
+    return apiFetch<WalletTransactionsResult>('/wallet/transactions');
   },
 };

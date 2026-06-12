@@ -6,7 +6,20 @@ import type {
 } from '@printslot/shared';
 import { apiFetch } from '@/services/api';
 
+export interface OrderListResult {
+  data: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
 export const orderService = {
+  listOrders(): Promise<OrderListResult> {
+    return apiFetch<OrderListResult>('/orders');
+  },
+
   previewPrice(input: PreviewPriceInput): Promise<OrderPriceResult> {
     return apiFetch<OrderPriceResult>('/orders/preview-price', {
       method: 'POST',
