@@ -385,7 +385,7 @@ SCREENS.shops = () => {
 function shopRow(s) {
   const init = s.name.split(' ').map(w => w[0]).slice(0,2).join('');
   return `<div class="card list-row" onclick="go('shopDetail',{id:'${s.id}'})">
-    <div class="avatar sm" style="border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--violet))">${init}</div>
+    <div class="avatar sm" style="border-radius:12px;background:var(--gradient-brand)">${init}</div>
     <div class="grow">
       <div class="ttl">${s.name}</div>
       <div class="sub"><i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:-1px"></i> ${s.address}</div>

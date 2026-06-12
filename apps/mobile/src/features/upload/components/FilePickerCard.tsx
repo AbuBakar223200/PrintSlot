@@ -3,14 +3,13 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import type { PrintConfig } from '@printslot/shared';
 import { PrintConfigForm } from '@/components/shared/PrintConfigForm';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
-import { Input } from '@/components/ui/Input';
+import { Input, Text } from '@/components/ui';
+import { radii, spacing, useThemeTokens } from '@/theme';
 import { uploadKeys, uploadText } from '../i18n/uploadCopy';
 import type { WizardFile } from '../types';
 
@@ -70,6 +69,7 @@ function FilePickerCardComponent({
   onRemove,
   onRetry,
 }: FilePickerCardProps) {
+  const tokens = useThemeTokens();
   const [isExpanded, setIsExpanded] = useState(false);
   const mimeType = file.upload?.mimeType ?? file.localFile.mimeType;
   const fileName = file.upload?.fileName ?? file.localFile.name;
@@ -131,9 +131,14 @@ function FilePickerCardComponent({
   }, [file.localId, file.manualPages, isPdf, onChange]);
 
   return (
-    <View style={styles.card} testID={`file-card-${file.localId}`}>
+    <View
+      style={[styles.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
+      testID={`file-card-${file.localId}`}
+    >
       <View style={styles.topRow}>
-        <View style={styles.preview}>
+        <View
+          style={[styles.preview, { backgroundColor: tokens.tintSoft, borderColor: tokens.border }]}
+        >
           {imageUri ? (
             <Image
               cachePolicy="memory-disk"
@@ -143,16 +148,27 @@ function FilePickerCardComponent({
               style={styles.previewImage}
             />
           ) : (
-            <Text style={styles.previewText}>{extensionLabel(fileName, mimeType)}</Text>
+            <Text variant="caption" color="primary" style={styles.bold}>
+              {extensionLabel(fileName, mimeType)}
+            </Text>
           )}
         </View>
 
         <View style={styles.fileInfo}>
-          <Text numberOfLines={1} style={styles.fileName}>{fileName}</Text>
+          <Text variant="body" color="textPrimary" numberOfLines={1} style={styles.semibold}>
+            {fileName}
+          </Text>
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{formatFileSize(fileSize)}</Text>
+            <Text variant="caption" color="textSecondary">{formatFileSize(fileSize)}</Text>
             {totalPages !== null ? (
-              <Text style={styles.pagesBadge}>
+              <Text
+                variant="caption"
+                color="textSecondary"
+                style={[
+                  styles.pagesBadge,
+                  { backgroundColor: tokens.tintSoft, borderColor: tokens.border },
+                ]}
+              >
                 {uploadText(uploadKeys.pages, { count: totalPages })}
               </Text>
             ) : null}
@@ -162,23 +178,25 @@ function FilePickerCardComponent({
         <View style={styles.statusColumn}>
           {file.uploadStatus === 'uploading' ? (
             <ActivityIndicator
-              color={colors.primary}
+              color={tokens.primary}
               size="small"
               testID={`file-uploading-${file.localId}`}
             />
           ) : null}
           {file.uploadStatus === 'done' ? (
-            <Text style={[styles.statusText, styles.statusDone]}>
+            <Text variant="caption" color="success" style={styles.semibold}>
               {uploadText(uploadKeys.uploaded)}
             </Text>
           ) : null}
           {file.uploadStatus === 'error' ? (
-            <Text style={[styles.statusText, styles.statusError]}>
+            <Text variant="caption" color="error" style={styles.semibold}>
               {uploadText(uploadKeys.error)}
             </Text>
           ) : null}
           {file.uploadStatus === 'pending' ? (
-            <Text style={styles.statusText}>{uploadText(uploadKeys.pending)}</Text>
+            <Text variant="caption" color="textSecondary" style={styles.semibold}>
+              {uploadText(uploadKeys.pending)}
+            </Text>
           ) : null}
         </View>
       </View>
@@ -197,18 +215,20 @@ function FilePickerCardComponent({
       ) : null}
 
       {file.uploadStatus === 'error' ? (
-        <View style={styles.errorRow}>
-          <Text style={styles.errorText}>
+        <View style={[styles.errorRow, { backgroundColor: tokens.surface, borderColor: tokens.error }]}>
+          <Text variant="bodySm" color="error" style={styles.flex}>
             {file.uploadError ?? uploadText(uploadKeys.error)}
           </Text>
           <Pressable
             accessibilityLabel={uploadText(uploadKeys.retry)}
             accessibilityRole="button"
             onPress={handleRetry}
-            style={styles.inlineButton}
+            style={[styles.inlineButton, { borderColor: tokens.error }]}
             testID={`file-retry-${file.localId}`}
           >
-            <Text style={styles.inlineButtonText}>{uploadText(uploadKeys.retry)}</Text>
+            <Text variant="caption" color="error" style={styles.bold}>
+              {uploadText(uploadKeys.retry)}
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -220,9 +240,9 @@ function FilePickerCardComponent({
             : uploadText(uploadKeys.configure)}
           accessibilityRole="button"
           onPress={handleToggleExpanded}
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { backgroundColor: tokens.tintSoft, borderColor: tokens.border }]}
         >
-          <Text style={styles.secondaryButtonText}>
+          <Text variant="bodySm" color="primary" style={styles.bold}>
             {isExpanded ? uploadText(uploadKeys.collapse) : uploadText(uploadKeys.configure)}
           </Text>
         </Pressable>
@@ -230,10 +250,12 @@ function FilePickerCardComponent({
           accessibilityLabel={uploadText(uploadKeys.remove)}
           accessibilityRole="button"
           onPress={handleRemove}
-          style={styles.removeButton}
+          style={[styles.removeButton, { borderColor: tokens.error }]}
           testID={`file-remove-${file.localId}`}
         >
-          <Text style={styles.removeButtonText}>{uploadText(uploadKeys.remove)}</Text>
+          <Text variant="bodySm" color="error" style={styles.bold}>
+            {uploadText(uploadKeys.remove)}
+          </Text>
         </Pressable>
       </View>
 
@@ -253,11 +275,12 @@ function FilePickerCardComponent({
 export const FilePickerCard = memo(FilePickerCardComponent);
 
 const styles = StyleSheet.create({
+  bold: { fontWeight: '700' },
+  semibold: { fontWeight: '600' },
+  flex: { flex: 1 },
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.card,
     borderWidth: 1,
     gap: spacing.md,
     padding: spacing.lg,
@@ -269,10 +292,8 @@ const styles = StyleSheet.create({
   },
   preview: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     height: 56,
     justifyContent: 'center',
@@ -283,37 +304,19 @@ const styles = StyleSheet.create({
     height: 56,
     width: 56,
   },
-  previewText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-  },
   fileInfo: {
     flex: 1,
     gap: spacing.xs,
-  },
-  fileName: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
   },
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  metaText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
   pagesBadge: {
-    ...typography.caption,
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.sm,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    color: colors.textSecondary,
     overflow: 'hidden',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -322,48 +325,24 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     minWidth: 74,
   },
-  statusText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  statusDone: {
-    color: colors.success,
-  },
-  statusError: {
-    color: colors.error,
-  },
   manualPagesInput: {
     maxWidth: 180,
   },
   errorRow: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.error,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
   },
-  errorText: {
-    ...typography.bodySm,
-    color: colors.error,
-    flex: 1,
-  },
   inlineButton: {
-    borderColor: colors.error,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.sm,
+    borderRadius: radii.sm,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-  },
-  inlineButtonText: {
-    ...typography.caption,
-    color: colors.error,
-    fontWeight: '700',
   },
   actionRow: {
     flexDirection: 'row',
@@ -371,34 +350,21 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     flex: 1,
     justifyContent: 'center',
     minHeight: 44,
     paddingHorizontal: spacing.md,
   },
-  secondaryButtonText: {
-    ...typography.bodySm,
-    color: colors.primary,
-    fontWeight: '700',
-  },
   removeButton: {
     alignItems: 'center',
-    borderColor: colors.error,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 44,
     paddingHorizontal: spacing.md,
-  },
-  removeButtonText: {
-    ...typography.bodySm,
-    color: colors.error,
-    fontWeight: '700',
   },
 });

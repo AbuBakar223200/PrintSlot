@@ -12,6 +12,7 @@ export interface BannerProps {
   /** Localized string content. */
   children: React.ReactNode;
   style?: ViewStyle;
+  testID?: string;
 }
 
 /**
@@ -20,12 +21,16 @@ export interface BannerProps {
  * Inline status strip (spec §5.2) for auth errors, shop-status, low-balance and
  * the app-wide offline message. Tinted via the active theme's tone styles.
  */
-export function Banner({ tone = 'info', icon: Icon, children, style }: BannerProps) {
+export function Banner({ tone = 'info', icon: Icon, children, style, testID }: BannerProps) {
   const { tones } = useTheme();
   const t = tones[tone];
 
   return (
-    <View style={[styles.banner, { backgroundColor: t.bg }, style]} accessibilityRole="alert">
+    <View
+      style={[styles.banner, { backgroundColor: t.bg }, style]}
+      accessibilityRole="alert"
+      testID={testID}
+    >
       {Icon ? <Icon size={18} color={t.fg} /> : null}
       <Text variant="bodySm" style={[styles.text, { color: t.fg }]}>
         {children}
@@ -41,7 +46,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderCurve: 'continuous',
   },
   text: { flex: 1 },

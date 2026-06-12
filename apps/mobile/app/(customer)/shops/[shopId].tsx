@@ -1,36 +1,60 @@
 import React, { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { ShopStatus, type Shop } from '@printslot/shared';
-import { Button, ButtonText } from '@/components/ui/Button';
-import { colors, spacing, borderRadius, typography } from '@/config/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft, Clock, MapPin, Phone, Zap } from 'lucide-react-native';
+import { ShopStatus } from '@printslot/shared';
+import {
+  AmbientBackground,
+  Banner,
+  Button,
+  ButtonIcon,
+  ButtonText,
+  Card,
+  EmptyState,
+  FrostCard,
+  IconButton,
+  MoneyText,
+  Screen,
+  Skeleton,
+  Text,
+} from '@/components/ui';
+import { spacing, useThemeTokens } from '@/theme';
 import { useShop, useActiveSlot } from '@/features/shops/hooks/useShop';
-import { formatCurrency } from '@/utils/formatCurrency';
 
 function getShopId(shopId?: string | string[]) {
   return typeof shopId === 'string' ? shopId : Array.isArray(shopId) ? shopId[0] ?? '' : '';
 }
 
-function PriceRow({ label, value }: { label: string; value: string }) {
+function PriceRow({
+  label,
+  amount,
+  sign,
+  value,
+  first,
+}: {
+  label: string;
+  amount?: number;
+  sign?: '+';
+  value?: string;
+  first?: boolean;
+}) {
+  const tokens = useThemeTokens();
   return (
-    <View style={styles.priceRow}>
-      <Text style={styles.priceLabel}>{label}</Text>
-      <Text style={styles.priceValue}>{value}</Text>
+    <View style={[styles.priceRow, first ? null : { borderTopWidth: 1, borderTopColor: tokens.border }]}>
+      <Text variant="body" color="textSecondary">{label}</Text>
+      {amount != null ? (
+        <MoneyText amount={amount} sign={sign} variant="body" color="textPrimary" style={styles.semibold} />
+      ) : (
+        <Text variant="body" color="textPrimary" style={styles.semibold}>{value}</Text>
+      )}
     </View>
   );
 }
 
 export default function ShopDetailScreen() {
+  const tokens = useThemeTokens();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ shopId?: string | string[] }>();
   const shopId = getShopId(params.shopId);
 
@@ -44,17 +68,11 @@ export default function ShopDetailScreen() {
   }, [shop?.phone]);
 
   const printNow = useCallback(() => {
-    router.push({
-      pathname: '/(customer)/orders/new',
-      params: { shopId, mode: 'QUEUE' },
-    });
+    router.push({ pathname: '/(customer)/orders/new', params: { shopId, mode: 'QUEUE' } });
   }, [shopId]);
 
   const schedulePickup = useCallback(() => {
-    router.push({
-      pathname: '/(customer)/orders/new',
-      params: { shopId, mode: 'SLOT' },
-    });
+    router.push({ pathname: '/(customer)/orders/new', params: { shopId, mode: 'SLOT' } });
   }, [shopId]);
 
   const goBack = useCallback(() => {
@@ -63,105 +81,99 @@ export default function ShopDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#1A1A2E', '#16213E', '#0F3460']}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <View style={styles.centerState}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={styles.stateText}>Loading shop...</Text>
-        </View>
-      </View>
+      <Screen contentContainerStyle={styles.scroll}>
+        <Skeleton width={44} height={44} radius={14} />
+        <FrostCard pad={20}>
+          <View style={styles.heroSkel}>
+            <Skeleton width="70%" height={26} />
+            <Skeleton width="90%" height={14} />
+            <Skeleton width="50%" height={14} />
+          </View>
+        </FrostCard>
+        <Card>
+          <View style={styles.heroSkel}>
+            <Skeleton width="40%" height={16} />
+            <Skeleton width="100%" height={14} />
+            <Skeleton width="100%" height={14} />
+          </View>
+        </Card>
+      </Screen>
     );
   }
 
   if (isError || !shop) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#1A1A2E', '#16213E', '#0F3460']}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+      <Screen contentContainerStyle={styles.centerState}>
+        <EmptyState
+          icon={MapPin}
+          title="Shop not found"
+          body="This shop is unavailable or no longer exists."
+          cta={{ label: 'Back', onPress: goBack }}
         />
-        <View style={styles.centerState}>
-          <Text style={styles.stateTitle}>Shop not found</Text>
-          <Text style={styles.stateText}>This shop is unavailable or no longer exists.</Text>
-          <Button onPress={goBack} variant="secondary" testID="shop-detail-back-button">
-            <ButtonText>Back</ButtonText>
-          </Button>
-        </View>
-      </View>
+      </Screen>
     );
   }
 
   const isActive = shop.status === ShopStatus.ACTIVE;
   const showPrintNow = isActive && activeSlot != null;
+  const closesAt = activeSlot?.template?.endTime ?? null;
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#1A1A2E', '#16213E', '#0F3460']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <View style={styles.orbTopRight} />
+    <View style={styles.flex}>
+      <AmbientBackground />
+      <View style={[styles.flex, { paddingTop: insets.top }]}>
+        <View style={styles.topBar}>
+          <IconButton icon={ChevronLeft} accessibilityLabel="Back" onPress={goBack} variant="surface" />
+        </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header card */}
-        <Animated.View entering={FadeInDown.duration(600).delay(100)} style={styles.card}>
-          <Text style={styles.shopName}>{shop.name}</Text>
-          <Text style={styles.address}>{shop.address}</Text>
-          {shop.phone ? (
-            <Pressable onPress={callPhone} hitSlop={8} testID="shop-detail-phone">
-              <Text style={styles.phone}>{shop.phone}</Text>
-            </Pressable>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
+        >
+          <FrostCard pad={20}>
+            <View style={styles.hero}>
+              <Text variant="h1" color="textPrimary">{shop.name}</Text>
+              <View style={styles.metaRow}>
+                <MapPin size={15} color={tokens.textMuted} />
+                <Text variant="bodySm" color="textSecondary" style={styles.flexText}>{shop.address}</Text>
+              </View>
+              {shop.phone ? (
+                <Pressable onPress={callPhone} hitSlop={8} style={styles.metaRow} testID="shop-detail-phone">
+                  <Phone size={15} color={tokens.primary} />
+                  <Text variant="bodySm" color="primary" style={styles.semibold}>{shop.phone}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </FrostCard>
+
+          {!isActive ? (
+            <Banner tone="warn" icon={Clock} testID="shop-detail-status-banner">
+              {`This shop is currently ${shop.status.toLowerCase()}`}
+            </Banner>
           ) : null}
-        </Animated.View>
 
-        {/* Status banner */}
-        {!isActive ? (
-          <Animated.View
-            entering={FadeInDown.duration(600).delay(200)}
-            style={styles.banner}
-            testID="shop-detail-status-banner"
-          >
-            <Text style={styles.bannerText}>
-              This shop is currently {shop.status.toLowerCase()}
-            </Text>
-          </Animated.View>
-        ) : null}
+          {showPrintNow && closesAt ? (
+            <Banner tone="success" icon={Clock}>{`Open now · closes ${closesAt}`}</Banner>
+          ) : null}
 
-        {/* Pricing */}
-        <Animated.View entering={FadeInDown.duration(600).delay(250)} style={styles.card}>
-          <Text style={styles.sectionTitle}>Pricing</Text>
-          <PriceRow label="Color (per page)" value={formatCurrency(shop.colorRate)} />
-          <PriceRow label="B&W (per page)" value={formatCurrency(shop.bwRate)} />
-          <PriceRow label="A3 surcharge (per page)" value={formatCurrency(shop.a3Surcharge)} />
-          <PriceRow
-            label="Duplex discount"
-            value={`${Math.round((1 - Number(shop.duplexDiscount)) * 100)}% off`}
-          />
-        </Animated.View>
+          <Card>
+            <Text variant="h3" color="textPrimary" style={styles.sectionTitle}>Pricing</Text>
+            <PriceRow first label="Color (per page)" amount={Number(shop.colorRate)} />
+            <PriceRow label="B&W (per page)" amount={Number(shop.bwRate)} />
+            <PriceRow label="A3 surcharge (per page)" amount={Number(shop.a3Surcharge)} sign="+" />
+            <PriceRow
+              label="Duplex discount"
+              value={`${Math.round((1 - Number(shop.duplexDiscount)) * 100)}% off`}
+            />
+          </Card>
+        </ScrollView>
 
-        {/* Actions */}
         {isActive ? (
-          <Animated.View entering={FadeInDown.duration(600).delay(300)} style={styles.actionRow}>
+          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md, borderTopColor: tokens.border }]}>
             {showPrintNow ? (
-              <Button
-                onPress={printNow}
-                disabled={isSlotLoading}
-                size="lg"
-                style={styles.actionButton}
-                testID="shop-detail-print-now"
-              >
+              <Button onPress={printNow} disabled={isSlotLoading} size="lg" testID="shop-detail-print-now">
+                <ButtonIcon><Zap size={18} color={tokens.onPrimary} /></ButtonIcon>
                 <ButtonText>Print Now</ButtonText>
               </Button>
             ) : null}
@@ -169,116 +181,58 @@ export default function ShopDetailScreen() {
               onPress={schedulePickup}
               variant="secondary"
               size="lg"
-              style={styles.actionButton}
               testID="shop-detail-schedule-pickup"
             >
               <ButtonText>Schedule Pickup</ButtonText>
             </Button>
-          </Animated.View>
+          </View>
         ) : null}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  flex: { flex: 1 },
+  topBar: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
-  orbTopRight: {
-    position: 'absolute',
-    top: -80,
-    right: -80,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
-  },
-  scrollContent: {
+  scroll: {
     padding: spacing.xl,
+    paddingTop: spacing.sm,
     gap: spacing.lg,
   },
   centerState: {
-    flex: 1,
-    alignItems: 'center',
+    flexGrow: 1,
     justifyContent: 'center',
-    gap: spacing.md,
-    padding: spacing.xl,
   },
-  stateTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  stateText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: colors.glassBg,
-    borderRadius: borderRadius.xl,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xl,
+  hero: {
     gap: spacing.sm,
   },
-  shopName: {
-    ...typography.h1,
-    color: colors.textPrimary,
+  heroSkel: {
+    gap: spacing.md,
   },
-  address: {
-    ...typography.body,
-    color: colors.textSecondary,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  phone: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  banner: {
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-    borderRadius: borderRadius.md,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: colors.warning,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  bannerText: {
-    ...typography.bodySm,
-    color: colors.warning,
-    textAlign: 'center',
-    textTransform: 'capitalize',
-  },
+  flexText: { flex: 1 },
   sectionTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     paddingVertical: spacing.md,
   },
-  priceLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  priceValue: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  actionRow: {
+  semibold: { fontWeight: '600' },
+  footer: {
     gap: spacing.md,
-  },
-  actionButton: {
-    width: '100%',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
   },
 });

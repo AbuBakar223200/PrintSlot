@@ -1,22 +1,45 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
+import { Search, Store } from 'lucide-react-native';
 import type { Shop } from '@printslot/shared';
 import { ShopCard } from '@/components/shared/ShopCard';
-import { Button, ButtonText } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { colors, spacing, typography } from '@/config/theme';
+import {
+  Button,
+  ButtonText,
+  Card,
+  EmptyState,
+  Input,
+  Screen,
+  Skeleton,
+  Text,
+} from '@/components/ui';
+import { spacing, useThemeTokens } from '@/theme';
 import { useShops } from '@/features/shops/hooks/useShops';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const EMPTY_SHOPS: Shop[] = [];
+const SKELETON_ROWS = ['s1', 's2', 's3', 's4'];
 
 function getInitialSearch(search?: string | string[]) {
   return typeof search === 'string' ? search : '';
 }
 
+function SkeletonRow() {
+  return (
+    <Card style={styles.skelRow} pad={16}>
+      <Skeleton width={52} height={52} radius={14} />
+      <View style={styles.skelText}>
+        <Skeleton width="55%" height={14} />
+        <Skeleton width="80%" height={12} />
+      </View>
+    </Card>
+  );
+}
+
 export default function CustomerShopListScreen() {
+  const tokens = useThemeTokens();
   const params = useLocalSearchParams<{ search?: string | string[] }>();
   const [search, setSearch] = useState(() => getInitialSearch(params.search));
   const debouncedSearch = useDebounce(search, 300);
@@ -28,28 +51,16 @@ export default function CustomerShopListScreen() {
   }, []);
 
   const renderShop = useCallback(({ item }: { item: Shop }) => (
-    <ShopCard
-      id={item.id}
-      name={item.name}
-      address={item.address}
-      onPress={openShop}
-    />
+    <ShopCard id={item.id} name={item.name} address={item.address} onPress={openShop} />
   ), [openShop]);
 
   const keyExtractor = useCallback((item: Shop) => item.id, []);
-
-  const retry = useCallback(() => {
-    void refetch();
-  }, [refetch]);
-
-  const refresh = useCallback(() => {
-    void refetch();
-  }, [refetch]);
+  const retry = useCallback(() => { void refetch(); }, [refetch]);
 
   const header = (
     <View style={styles.header}>
-      <Text style={styles.title}>Shops</Text>
-      <Text style={styles.subtitle}>Find an active print shop near you.</Text>
+      <Text variant="h1" color="textPrimary">Shops</Text>
+      <Text variant="body" color="textSecondary">Find an active print shop near you.</Text>
       <Input
         accessibilityLabel="Search shops"
         autoCapitalize="none"
@@ -57,6 +68,7 @@ export default function CustomerShopListScreen() {
         onChangeText={setSearch}
         placeholder="Search by shop name"
         returnKeyType="search"
+        leftIcon={<Search size={18} color={tokens.textMuted} />}
         testID="shops-search-input"
         value={search}
       />
@@ -65,90 +77,99 @@ export default function CustomerShopListScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <Screen contentContainerStyle={styles.padded}>
         {header}
-        <View style={styles.centerState}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={styles.stateText}>Loading shops...</Text>
+        <View style={styles.list}>
+          {SKELETON_ROWS.map((id) => <SkeletonRow key={id} />)}
         </View>
-      </View>
+      </Screen>
     );
   }
 
   if (isError && shops.length === 0) {
     return (
-      <View style={styles.container}>
+      <Screen contentContainerStyle={styles.padded}>
         {header}
-        <View style={styles.centerState}>
-          <Text style={styles.stateTitle}>Could not load shops</Text>
-          <Text style={styles.stateText}>Please try again in a moment.</Text>
-          <Button onPress={retry} testID="shops-retry-button">
+        <Card style={styles.errorCard}>
+          <Text variant="h3" color="textPrimary" align="center">Could not load shops</Text>
+          <Text variant="bodySm" color="textSecondary" align="center">
+            Please try again in a moment.
+          </Text>
+          <Button onPress={retry} size="md" style={styles.retry} testID="shops-retry-button">
             <ButtonText>Retry</ButtonText>
           </Button>
-        </View>
-      </View>
+        </Card>
+      </Screen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <Screen scroll={false}>
       <FlashList
         contentContainerStyle={styles.listContent}
         data={shops}
-        estimatedItemSize={96}
+        estimatedItemSize={104}
         keyExtractor={keyExtractor}
+        ItemSeparatorComponent={Separator}
         ListEmptyComponent={(
-          <View style={styles.centerState}>
-            <Text style={styles.stateTitle}>
-              {debouncedSearch ? `No shops match "${debouncedSearch}"` : 'No shops available yet'}
-            </Text>
-            <Text style={styles.stateText}>Check back later for active shops.</Text>
-          </View>
+          <EmptyState
+            icon={Store}
+            title={debouncedSearch ? 'No matching shops' : 'No shops yet'}
+            body={
+              debouncedSearch
+                ? `No shops match "${debouncedSearch}". Try another name.`
+                : 'Check back later for active print shops.'
+            }
+          />
         )}
         ListHeaderComponent={header}
-        onRefresh={refresh}
+        onRefresh={retry}
         refreshing={isRefetching && !isLoading}
         renderItem={renderShop}
+        showsVerticalScrollIndicator={false}
       />
-    </View>
+    </Screen>
   );
 }
 
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-    flex: 1,
+  padded: {
+    padding: spacing.xl,
+    gap: spacing.lg,
   },
   header: {
     gap: spacing.md,
-    padding: spacing.xl,
     paddingBottom: spacing.lg,
   },
-  title: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
   listContent: {
-    paddingBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
   },
-  centerState: {
+  list: {
+    gap: spacing.md,
+  },
+  separator: {
+    height: spacing.md,
+  },
+  skelRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.xl,
   },
-  stateTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
+  skelText: {
+    flex: 1,
+    gap: spacing.sm,
   },
-  stateText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  errorCard: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  retry: {
+    marginTop: spacing.sm,
+    alignSelf: 'center',
   },
 });

@@ -8,10 +8,12 @@ import React, {
 import { AccessibilityInfo, useColorScheme } from 'react-native';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import {
+  pastels,
   radii,
   spacing,
   themes,
   tones,
+  type PastelKey,
   type ThemeName,
   type ThemeTokens,
   type ToneKey,
@@ -35,6 +37,8 @@ export interface ThemeContextValue {
   tokens: ThemeTokens;
   /** Resolved tinted tone styles (StatusBadge / Banner / tinted icons). */
   tones: Record<ToneKey, ToneStyle>;
+  /** Resolved soft-pastel grouping styles (stat / grouping cards). */
+  pastels: Record<PastelKey, ToneStyle>;
   /** Spacing scale (theme-agnostic). */
   spacing: typeof spacing;
   /** Radii (theme-agnostic). */
@@ -44,6 +48,22 @@ export interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+/**
+ * Default (light) context used when a consumer renders outside a `<ThemeProvider>`
+ * — e.g. isolated unit tests or Storybook. The app root always mounts the real
+ * provider, so in production this default is never observed; it just keeps
+ * primitives renderable in isolation instead of throwing.
+ */
+const DEFAULT_THEME_CONTEXT: ThemeContextValue = {
+  name: 'light',
+  tokens: themes.light,
+  tones: tones.light,
+  pastels: pastels.light,
+  spacing,
+  radii,
+  reduceMotion: false,
+};
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
@@ -78,6 +98,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       name,
       tokens: themes[name],
       tones: tones[name],
+      pastels: pastels[name],
       spacing,
       radii,
       reduceMotion,
@@ -95,11 +116,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
  * Primitives that need more than colors (e.g. AmbientBackground) use this.
  */
 export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error('useTheme must be used within a <ThemeProvider>');
-  }
-  return ctx;
+  return useContext(ThemeContext) ?? DEFAULT_THEME_CONTEXT;
 }
 
 /**

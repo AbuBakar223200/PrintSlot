@@ -52,7 +52,7 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 14,
     borderCurve: 'continuous',
     padding: 3,
     gap: 2,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     minHeight: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 9,
+    borderRadius: 11,
     borderCurve: 'continuous',
   },
 });

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Stack, router, useRootNavigationState } from 'expo-router';
-import { colors } from '@/config/theme';
+import { useThemeTokens } from '@/theme';
 import { getRoleHomePath } from '@/features/auth/navigation/roleRedirect';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
  * Redirects authenticated users while this auth group is mounted.
  */
 export default function AuthLayout() {
+  const tokens = useThemeTokens();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const role = useAuthStore((s) => s.user?.role);
@@ -28,7 +29,7 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: tokens.bgGradient[1] },
         animation: 'slide_from_right',
       }}
     />

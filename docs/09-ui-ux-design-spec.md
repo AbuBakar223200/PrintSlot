@@ -59,7 +59,7 @@
 
 **North star:** *Calm, fast, trustworthy utility.*
 
-Printing is a chore. We win on **speed**, **clarity**, and **trust** (price and live status) — not ornament. The aesthetic target is **fintech-grade clean**, localized for Bangladesh: campus environments, outdoor sunlight legibility, and low-end LCD Android hardware.
+Printing is a chore. We win on **speed**, **clarity**, and **trust** (price and live status) — not ornament. The aesthetic target is **warm glass-fintech**: fintech-grade clean and legible, warmed by a restrained indigo→violet gradient on hero/action surfaces, soft depth, and rounded forms. Localized for Bangladesh: campus environments, outdoor sunlight legibility, and low-end LCD Android hardware.
 
 ### Seven Pillars
 
@@ -81,9 +81,11 @@ Each decision below was resolved during the design review and is now **locked**.
 
 ### Fork 1 — Aesthetic direction
 
-**Decision:** Clean, **light-first fintech** — not premium-dark-glass.
+**Decision:** Clean, **light-first warm glass-fintech**. Keep the calm, sunlight-legible structure, but warm it with a **tokenized indigo→violet gradient** on hero surfaces (wallet / login / brand), primary buttons, and the FAB; **softer, slightly violet-tinted depth shadows**; **rounder corners**; and a **floating frosted tab bar**.
 
-**Rationale:** Trust and legibility beat spectacle for a utility used in sunlight on cheap screens. **Kill the old hardcoded blue per-screen gradients and the decorative "orb" blobs.** They fight legibility and were never tokenized.
+> Reskinned from the original "flat light-first fintech" direction via a design-review reopening: the move is *warmth and depth*, not spectacle. Reference aesthetic: soft, Apple-like glass utility.
+
+**Rationale:** Trust and legibility still beat spectacle for a utility used in sunlight on cheap screens. The decorative free-floating **"orb" blobs** and the **old hardcoded blue per-screen gradients** stay **retired** — the new gradient is applied **only to tokenized hero / brand / action surfaces** (never a per-screen hardcoded background), and dense lists and data stay on **solid cards** so body text always clears AA in sunlight.
 
 ### Fork 2 — Theme modes
 
@@ -93,11 +95,11 @@ Each decision below was resolved during the design review and is now **locked**.
 
 ### Fork 3 — Accent identity
 
-**Decision:** **Indigo** is the `primary` trust accent (light `#4F46E5`, dark `#6366F1`). **Orange (`#FF6B35`) is retired.** Status colors remain semantic (success/warn/error/info).
+**Decision:** **Indigo** is the `primary` trust accent (light `#4F46E5`, dark `#6366F1`); a tokenized **indigo→violet gradient** (`gradientBrand`) extends it onto hero cards, primary buttons, the FAB, avatars, and the brand mark. **Orange (`#FF6B35`) is retired.** Flat indigo still backs **all text / icon accents and status logic** — the gradient is **decorative surface only** and must carry white text at AA. Status colors remain semantic (success/warn/error/info).
 
-> **Logo note:** the app logo and wordmark must be **recolored from orange to indigo**. Track this in Open Risks.
+> **Logo note:** the app logo and wordmark must be **recolored from orange to the indigo→violet brand**. Track this in Open Risks.
 
-**Rationale:** Indigo reads as calm, financial, trustworthy. Orange read as cheap and energetic — the wrong signal for money and live status.
+**Rationale:** Indigo reads as calm, financial, trustworthy; the violet extension adds the soft, modern depth of the reference aesthetic without abandoning the trust signal. Orange read as cheap and energetic — the wrong signal for money and live status.
 
 ### Fork 4 — Typography
 
@@ -113,9 +115,9 @@ Each decision below was resolved during the design review and is now **locked**.
 
 ### Fork 6 — Surfaces
 
-**Decision:** An **ambient animated gradient backdrop** + **frosted translucent hero cards** (`expo-blur`) + **solid content cards** in lists and dense data. Radius: **16** for cards, **12** for controls, **full** for pills; all with `borderCurve: 'continuous'`.
+**Decision:** An **ambient animated gradient backdrop** (lavender → airy off-white → soft-violet wash) + **frosted translucent hero cards** (`expo-blur`) — with the **balance / login / brand hero** carrying the `gradientBrand` fill plus a soft glossy highlight — + **solid content cards** in lists and dense data + a **floating frosted tab bar** (detached, rounded, soft-shadowed, with an active-tab pill). A governed **soft-pastel grouping set** (lavender / mint / peach / sky — Section 3) tints stat and grouping cards. Radius: **20** for cards, **24** for hero / frost surfaces, **14** for controls, **full** for pills; all with `borderCurve: 'continuous'`.
 
-**Rationale:** Frost is reserved for hero zones (one per screen) where depth adds trust; solid cards keep dense lists legible and cheap to render on low-end devices.
+**Rationale:** Frost + gradient is reserved for hero zones (one per screen) where depth adds trust; solid cards keep dense lists legible and cheap to render on low-end devices. The pastel set gives colorful grouping (per the reference) without leaking raw hex into screens — every pastel is a semantic token with an AA-safe ink pair.
 
 ### Fork 7 — Motion
 
@@ -163,7 +165,7 @@ These **semantic** tokens replace the raw palette in `apps/mobile/src/config/the
 
 | Token | Role | Light | Dark |
 |---|---|---|---|
-| `bgGradient` | Ambient backdrop | pale indigo → white → warm wash | deep indigo → `#0B0B14` |
+| `bgGradient` | Ambient backdrop | lavender → airy off-white → soft-violet wash | deep indigo-violet → `#0B0B14` |
 | `surface` | Solid card / sheet base | `#FFFFFF` | `#14151F` |
 | `surfaceFrost` | Frosted hero card fill | `rgba(255,255,255,.78)` | `rgba(15,16,26,.66)` |
 | `textPrimary` | Headings, primary copy | `#0F1222` | `#F4F5FA` |
@@ -172,6 +174,7 @@ These **semantic** tokens replace the raw palette in `apps/mobile/src/config/the
 | `border` | Hairlines, dividers, input borders | `#E6E8F0` | `#262838` |
 | `primary` | Indigo accent, primary actions | `#4F46E5` | `#6366F1` |
 | `primaryPressed` | Pressed state of primary | `#4338CA` | `#4F46E5` |
+| `gradientBrand` | Indigo→violet hero / action fill | `135°, #5B4DE3 → #7C3AED → #A855F7` | `135°, #6366F1 → #8B5CF6 → #A855F7` |
 | `success` | READY, credits, positive | `#16A34A` | `#22C55E` |
 | `warn` | PROCESSING, low-balance, caution | `#D97706` | `#F59E0B` |
 | `error` | CANCELLED, debits, destructive | `#DC2626` | `#F87171` |
@@ -179,7 +182,22 @@ These **semantic** tokens replace the raw palette in `apps/mobile/src/config/the
 
 **Frost opacity floor.** `surfaceFrost` has a hard opacity floor so body text placed on a hero card always clears AA against the **blended** result (the frost fill composited over whatever gradient sits behind it). Never lower the opacity below the token value to "look glassier."
 
-**Low-end / Android fallback ("fake frost").** Real `expo-blur` runs **only in iOS hero zones**. On Android and low-end devices, substitute a **solid "fake frost" token** — white at ~78% on light, `#0F0F1A` at ~66% on dark — so the hero still reads as a distinct elevated surface without the GPU cost of a live blur.
+**Low-end / Android fallback ("fake frost").** Real `expo-blur` runs **only in iOS hero zones**. On Android and low-end devices, substitute a **solid "fake frost" token** — white at ~74% on light, `#0F0F1A` at ~62% on dark — so the hero still reads as a distinct elevated surface without the GPU cost of a live blur.
+
+**`gradientBrand` usage.** The brand gradient fills the **balance / login / brand hero**, **primary `Button`s**, the **FAB**, **`Avatar`s**, and the **brand mark** — nothing else. It is **decorative surface only**: never use it behind body copy, never derive text/icon color from it. Hero gradient surfaces use **white text** (`#FFFFFF` headings, `rgba(255,255,255,.82)` supporting) and must clear AA against the **darkest** stop. Flat `primary` still backs every inline accent, link, focus ring, and status color.
+
+### Soft-pastel grouping set
+
+A small, governed pastel palette gives the colorful card-grouping of the reference aesthetic **without** raw hex in screens. Each pastel is a `surface` + AA-safe `ink` pair (the ink clears AA on its own tint). Use it for **stat cards and grouping cards only** — never for status (status stays on the semantic map in Section 4) and never for body surfaces.
+
+| Token | Surface (light) | Ink (light) | Surface (dark) | Ink (dark) |
+|---|---|---|---|---|
+| `pastelLavender` | `#ECE9FB` | `#6D28D9` | `rgba(139,92,246,.18)` | `#C4B5FD` |
+| `pastelMint` | `#E3F7EC` | `#15803D` | `rgba(34,197,94,.15)` | `#4ADE80` |
+| `pastelPeach` | `#FDEADD` | `#C2410C` | `rgba(249,115,22,.16)` | `#FB923C` |
+| `pastelSky` | `#E3EFFD` | `#1D4ED8` | `rgba(59,130,246,.16)` | `#93C5FD` |
+
+Stat grids rotate the four pastels in order (lavender → mint → peach → sky); the card takes the surface, its icon chip takes a stronger tint of the ink.
 
 ---
 
@@ -245,10 +263,10 @@ All primitives are **token-driven** with **zero raw hex and zero emoji**.
 | Primitive | Responsibility |
 |---|---|
 | `Screen` | Root wrapper: safe-area handling, ambient background mount, `contentInsetAdjustmentBehavior="automatic"`. Every screen is wrapped in `Screen`. |
-| `Card` | Solid elevated surface for lists and dense data (radius 16, continuous). |
-| `FrostCard` | Frosted hero surface (`expo-blur` on iOS, fake-frost token elsewhere). One per screen, hero zones only. |
+| `Card` | Solid elevated surface for lists and dense data (radius 20, continuous, soft violet-tinted shadow). |
+| `FrostCard` | Frosted hero surface (`expo-blur` on iOS, fake-frost token elsewhere), radius 24. One per screen, hero zones only. The balance / login / brand hero takes the `gradientBrand` fill + a soft glossy highlight + white text. |
 | `Text` | Font selection (Inter/Hind Siliguri), BN awareness, tabular figures. |
-| `Button` | Primary/secondary/danger actions, retuned to indigo. Compound: `Button` + `ButtonText` + `ButtonIcon`. |
+| `Button` | Primary/secondary/danger actions; **primary takes the `gradientBrand` fill** (radius 16), secondary is a soft indigo tint, danger a soft error tint. Compound: `Button` + `ButtonText` + `ButtonIcon`. |
 | `IconButton` | Single-tap lucide action (≥44×44, screen-reader label required). |
 | `Input` | Text field, retuned to indigo focus ring. |
 | `StatusBadge` | OrderStatus color + lucide icon (§4.1); color crossfades on status change. |
@@ -329,7 +347,7 @@ Per-screen, status-specific states (e.g. order status blocks, shop status banner
 
 For each screen: **Purpose**, **Anatomy** (top → bottom), **Components**, **States**, **Interactions & motion**, **Role / i18n notes**, and the **slice / issue**.
 
-> **Customer shell.** `<Tabs>`: Home · Orders · Wallet · Notifications. Frosted tab bar, lucide icons, indigo active tint, Notifications `tabBarBadge` fed by `useUnreadCount`. Every screen is wrapped in `Screen`.
+> **Customer shell.** `<Tabs>`: Home · Orders · Wallet · Notifications. **Floating frosted tab bar** (detached from the bottom edge, rounded, soft-shadowed, with an **active-tab pill**), lucide icons, indigo active tint, Notifications `tabBarBadge` fed by `useUnreadCount`. Every screen is wrapped in `Screen`. The same floating tab-bar treatment applies to the owner and admin shells.
 
 ---
 
@@ -442,7 +460,7 @@ For each screen: **Purpose**, **Anatomy** (top → bottom), **Components**, **St
 
 - **Purpose:** Show wallet balance and the immutable transaction ledger. **Trust surface — over-invest.**
 - **Anatomy (top → bottom):**
-  1. Balance hero `FrostCard`: a large `MoneyText` (৳), a "Wallet balance" label, an indigo gradient accent, and a **balance-tick** animation on change.
+  1. Balance hero card: a full **`gradientBrand` fill** (indigo→violet) with a soft glossy highlight and white text — a large `MoneyText` (৳, white tabular figures), a "Wallet balance" label, and a **balance-tick** animation on change.
   2. **LOW_BALANCE** `Banner` (warn) when balance < threshold (default **50**), copy "Balance low — top up at counter". **No top-up button** — top-up is admin-only in v1.
   3. **Transactions** `FlashList` of `TransactionRow`: lucide `ArrowUp` (green, CREDIT) / `ArrowDown` (red, DEBIT), a reason label, a timestamp, and a signed `MoneyText`.
 - **Transaction reason label map:**

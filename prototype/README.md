@@ -1,9 +1,9 @@
 # PrintSlot — Interactive Design Prototype
 
 A high-fidelity, **static HTML/CSS/JS** prototype of the PrintSlot mobile app. It exists to
-communicate the locked UI/UX design system (light-first fintech, indigo brand accent,
-frosted glass, lucide icons, EN/বাংলা, light/dark) and to let reviewers *click through*
-real flows with mock data.
+communicate the locked UI/UX design system (warm glass-fintech, indigo→violet gradient
+brand, frosted glass + floating tab bar, soft pastels, lucide icons, EN/বাংলা, light/dark)
+and to let reviewers *click through* real flows with mock data.
 
 > **This is a design prototype, not the production app.** No React Native, no build step,
 > no network, no backend. All data is mocked in `data.js`. The real app lives in
@@ -100,10 +100,11 @@ a per-role bottom tab bar, and a header avatar that opens the Profile hub.
 
 ---
 
-## Design system reference (locked)
+## Design system reference (warm glass-fintech)
 
-- **Brand:** indigo `#4F46E5` (light) / `#6366F1` (dark). Orange is retired.
-- **Surfaces:** frosted translucent (`backdrop-filter: blur(20px)`) for hero zones only; solid cards for list rows / dense data. 16 px card radius, 12 px controls, full pills.
+- **Brand:** indigo `#4F46E5` (light) / `#6366F1` (dark) — Orange is retired. A tokenized **indigo→violet gradient** (`--gradient-brand`) fills the balance/login/brand hero, primary buttons, the FAB, avatars, and the brand mark. Flat indigo still backs every text/icon accent, link, focus ring, and status color.
+- **Surfaces:** frosted translucent (`backdrop-filter: blur(22px)`) for hero zones only; solid cards for list rows / dense data; a **floating frosted tab bar** (detached, rounded, active-tab pill). Radius **20** cards, **24** hero/frost, **14** controls, full pills. Soft, slightly violet-tinted depth shadows.
+- **Pastels:** a governed soft-pastel grouping set (lavender / mint / peach / sky), each a surface + AA-safe ink pair, rotates across the analytics stat cards. Never used for status.
 - **Type:** Inter (Latin) + Hind Siliguri (Bengali); money uses tabular figures.
 - **Icons:** lucide only — no emoji. StatusBadge: QUEUED→info+ListOrdered, SCHEDULED→violet+CalendarClock, PROCESSING→warn+Printer, READY→success+PackageCheck, COLLECTED→muted+CheckCheck, CANCELLED→error+XCircle.
 - **Motion:** screen fade ≤220 ms, press-scale 0.97, badge crossfade, ETA/balance count-up, success beat. Honors `prefers-reduced-motion`.

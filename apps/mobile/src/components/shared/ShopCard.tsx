@@ -1,6 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { radii, spacing, useThemeTokens } from '@/theme';
+import { Text } from '@/components/ui';
 
 export interface ShopCardProps {
   id: string;
@@ -10,6 +11,8 @@ export interface ShopCardProps {
 }
 
 function ShopCardComponent({ id, name, address, onPress }: ShopCardProps) {
+  const tokens = useThemeTokens();
+
   const handlePress = useCallback(() => {
     onPress(id);
   }, [id, onPress]);
@@ -18,20 +21,32 @@ function ShopCardComponent({ id, name, address, onPress }: ShopCardProps) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Open ${name}`}
-      android_ripple={{ color: colors.borderLight }}
+      android_ripple={{ color: tokens.border }}
       onPress={handlePress}
       testID={`shop-card-${id}`}
       style={({ pressed }) => [
         styles.card,
+        { backgroundColor: tokens.surface, borderColor: tokens.border },
         pressed ? styles.pressed : null,
       ]}
     >
-      <View style={styles.initialBadge}>
-        <Text style={styles.initial}>{name.charAt(0).toUpperCase()}</Text>
+      <View
+        style={[
+          styles.initialBadge,
+          { backgroundColor: tokens.tintSoft, borderColor: tokens.border },
+        ]}
+      >
+        <Text variant="h3" color="primary">
+          {name.charAt(0).toUpperCase()}
+        </Text>
       </View>
       <View style={styles.content}>
-        <Text numberOfLines={1} style={styles.name}>{name}</Text>
-        <Text numberOfLines={2} style={styles.address}>{address}</Text>
+        <Text variant="h3" color="textPrimary" numberOfLines={1}>
+          {name}
+        </Text>
+        <Text variant="bodySm" color="textSecondary" numberOfLines={2}>
+          {address}
+        </Text>
       </View>
     </Pressable>
   );
@@ -42,10 +57,8 @@ export const ShopCard = memo(ShopCardComponent);
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.card,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -58,29 +71,15 @@ const styles = StyleSheet.create({
   },
   initialBadge: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     height: 52,
     justifyContent: 'center',
     width: 52,
   },
-  initial: {
-    ...typography.h3,
-    color: colors.primary,
-  },
   content: {
     flex: 1,
     gap: spacing.xs,
-  },
-  name: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  address: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
   },
 });

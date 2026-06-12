@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: 14,
     borderCurve: 'continuous',
     minHeight: 50,
   },

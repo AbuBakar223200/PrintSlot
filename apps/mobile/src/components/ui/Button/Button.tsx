@@ -6,6 +6,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens } from '@/theme';
 import { Text } from '@/components/ui/Text';
 import type { TextVariant } from '@/theme/fonts';
@@ -38,8 +39,10 @@ const SIZE: Record<ButtonSize, { minHeight: number; px: number; variant: TextVar
 };
 
 /**
- * F5 — `Button` (retuned to indigo tokens). Compound: `Button` + `ButtonText` +
+ * F5 — `Button` (warm glass-fintech). Compound: `Button` + `ButtonText` +
  * `ButtonIcon`. Press-scale 0.97 (§6). Variants primary/secondary/ghost/danger.
+ * The **primary** variant fills with the indigo→violet `gradientBrand` (Fork 3 /
+ * spec §5.2); secondary is a soft indigo tint, danger a flat error fill.
  */
 export function Button({
   children,
@@ -55,20 +58,23 @@ export function Button({
   const tokens = useThemeTokens();
   const isDisabled = disabled || isLoading;
   const sz = SIZE[size];
+  const isGradient = variant === 'primary';
 
-  const backgroundColor =
-    variant === 'primary' ? tokens.primary : variant === 'danger' ? tokens.error : 'transparent';
-  const borderColor =
-    variant === 'secondary' ? tokens.primary : variant === 'ghost' ? tokens.border : 'transparent';
-  const borderWidth = variant === 'secondary' || variant === 'ghost' ? 1.5 : 0;
+  const backgroundColor = isGradient
+    ? 'transparent'
+    : variant === 'danger'
+      ? tokens.error
+      : variant === 'secondary'
+        ? tokens.tintSoft
+        : 'transparent';
+  const borderColor = variant === 'ghost' ? tokens.border : 'transparent';
+  const borderWidth = variant === 'ghost' ? 1.5 : 0;
   const textColor =
     variant === 'primary' || variant === 'danger' ? tokens.onPrimary : tokens.primary;
 
   return (
     <Ctx.Provider value={{ textColor, size }}>
       <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: isDisabled }}
         onPress={onPress}
         disabled={isDisabled}
         testID={testID}
@@ -91,6 +97,14 @@ export function Button({
           style,
         ]}
       >
+        {isGradient ? (
+          <LinearGradient
+            colors={tokens.gradientBrand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : null}
         {isLoading ? (
           <ActivityIndicator size="small" color={textColor} />
         ) : (
@@ -126,8 +140,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 12,
+    borderRadius: 16,
     borderCurve: 'continuous',
+    overflow: 'hidden',
   },
   content: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   disabled: { opacity: 0.5 },

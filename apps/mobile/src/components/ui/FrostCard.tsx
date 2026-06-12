@@ -29,7 +29,7 @@ export function FrostCard({ pad = true, style, children, ...rest }: FrostCardPro
 
   const frame: ViewStyle = {
     borderColor: tokens.border,
-    borderRadius: radii.card,
+    borderRadius: radii.hero,
   };
 
   if (Platform.OS === 'ios') {

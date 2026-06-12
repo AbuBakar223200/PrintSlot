@@ -12,7 +12,7 @@ export interface CardProps extends ViewProps {
 /**
  * F5 — `Card` primitive.
  *
- * Solid elevated surface for lists and dense data (Fork 6 / spec §5.2). Radius 16,
+ * Solid elevated surface for lists and dense data (Fork 6 / spec §5.2). Radius 20,
  * continuous corners, hairline border, plus a soft shadow on light (shadows are
  * invisible on dark, so dark is border-led). RN 0.74 lacks the CSS `boxShadow`
  * style, so we use legacy shadow props here in the DS layer.
@@ -47,10 +47,10 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   shadow: {
-    shadowColor: '#0F1222',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
+    shadowColor: '#282650',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 22,
     elevation: 2,
   },
 });

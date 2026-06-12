@@ -1,46 +1,59 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { Button, ButtonText } from '@/components/ui/Button';
-import { colors, spacing, typography } from '@/config/theme';
+import { Store } from 'lucide-react-native';
+import { Avatar, EmptyState, Screen, Text } from '@/components/ui';
+import { spacing } from '@/theme';
 
+/**
+ * Admin Shops landing (spec §8.21 shell). The full shop-approval queue lands with
+ * Slice 28; this is the reskinned shell — header + Avatar→Profile + an empty
+ * placeholder for the approvals list.
+ */
 export default function AdminShops() {
   const openProfile = useCallback(() => {
     router.push('/(admin)/profile' as never);
   }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Admin Shops Dashboard</Text>
-        <Text style={styles.subtitle}>Welcome, Platform Admin!</Text>
-        <Button onPress={openProfile} size="lg" testID="admin-profile-button">
-          <ButtonText>Profile</ButtonText>
-        </Button>
+    <Screen contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <View style={styles.grow}>
+          <Text variant="h1" color="textPrimary">Shops</Text>
+          <Text variant="bodySm" color="textSecondary">Platform Admin</Text>
+        </View>
+        <Pressable
+          onPress={openProfile}
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
+          hitSlop={8}
+          testID="admin-profile-button"
+        >
+          <Avatar name="Platform Admin" size="md" />
+        </Pressable>
       </View>
-    </View>
+
+      <EmptyState
+        icon={Store}
+        title="Shop approvals"
+        body="Pending shops awaiting review will appear here."
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
-    flex: 1,
-    justifyContent: 'center',
     padding: spacing.xl,
     gap: spacing.lg,
   },
-  title: {
-    ...typography.h1,
-    color: colors.textPrimary,
-    textAlign: 'center',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  grow: {
+    flex: 1,
+    gap: 2,
   },
 });
