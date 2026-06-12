@@ -1,65 +1,66 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StyleSheet, View } from 'react-native';
 import { queryClient } from '@/services/queryClient';
 import { useDeviceRegistration } from '@/features/users/hooks/useDeviceRegistration';
-import { colors } from '@/config/theme';
+import { ThemeProvider, useTheme, useThemeTokens } from '@/theme';
+import { ToastHost } from '@/components/ui';
+import { initI18n } from '@/i18n';
+import { useLang } from '@/i18n/useLang';
+import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+
+// Initialize i18n once at module load with the initial language (Phase 0 / F6).
+initI18n(useSettingsStore.getState().language);
 
 /**
- * App shell — applies the top safe-area inset globally so no screen's content
- * overlaps the status bar / camera notch. Backgrounds stay full-bleed; only the
- * navigator content is padded. Lives inside SafeAreaProvider so the hook resolves.
+ * App shell — themed root inside all providers. Applies the top safe-area inset
+ * globally (so un-migrated screens stay clear of the notch) and overlays the
+ * ToastHost. Migrated screens use the `Screen` primitive for the ambient
+ * background; the navigator base color comes from the active theme.
  */
 function AppShell() {
+  const tokens = useThemeTokens();
+  const { name } = useTheme();
   const insets = useSafeAreaInsets();
+  useLang(); // keep i18next synced to the settings-store language
 
   return (
-    <View style={[styles.shell, { paddingTop: insets.top }]}>
+    <View style={[styles.flex, { paddingTop: insets.top, backgroundColor: tokens.bgGradient[1] }]}>
+      <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: tokens.bgGradient[1] },
           animation: 'fade',
         }}
       />
+      <ToastHost />
     </View>
   );
 }
 
 /**
- * Root layout - app-wide providers.
- * Route groups own their local auth redirects so mounted screens do not get
- * remounted by a global navigation effect.
+ * Root layout — app-wide providers. Route groups own their local auth redirects.
  */
 export default function RootLayout() {
-  // Register this device's Expo push token once auth resolves.
-  // Hook is a no-op until isHydrated && isAuthenticated && user?.id is truthy;
-  // safe to invoke unconditionally at the top of the component.
+  // Register this device's Expo push token once auth resolves (no-op until ready).
   useDeviceRegistration();
 
   return (
-    <GestureHandlerRootView style={styles.root}>
+    <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
-          <AppShell />
-        </QueryClientProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AppShell />
+          </QueryClientProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  shell: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-});
+const styles = StyleSheet.create({ flex: { flex: 1 } });
