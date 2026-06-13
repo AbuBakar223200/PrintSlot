@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   center: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   inner: {
     gap: spacing.xl,

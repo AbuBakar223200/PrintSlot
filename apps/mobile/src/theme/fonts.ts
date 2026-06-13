@@ -78,13 +78,16 @@ export const typeScale: Record<
   TextVariant,
   { fontSize: number; lineHeight: number; weight: FontWeightKey; letterSpacing?: number }
 > = {
-  displayLg: { fontSize: 36, lineHeight: 44, weight: 'extrabold', letterSpacing: -0.5 },
-  h1: { fontSize: 28, lineHeight: 36, weight: 'bold', letterSpacing: -0.3 },
-  h2: { fontSize: 22, lineHeight: 28, weight: 'bold' },
-  h3: { fontSize: 18, lineHeight: 24, weight: 'semibold' },
-  body: { fontSize: 16, lineHeight: 24, weight: 'regular' },
-  bodySm: { fontSize: 14, lineHeight: 20, weight: 'regular' },
+  // Sizes pixel-matched to the locked prototype (prototype/styles.css):
+  // wallet `.amt` 44 · `.hdr-title` 22 · detail hero ordnum 26 / `.stat-card .v` 24
+  // · `.section-title` 16 · `.input`/`.btn` 15 · `.order-meta` 13 · `.notif-time` 11.5.
+  displayLg: { fontSize: 44, lineHeight: 48, weight: 'extrabold', letterSpacing: -0.5 },
+  h1: { fontSize: 22, lineHeight: 28, weight: 'bold', letterSpacing: -0.4 },
+  h2: { fontSize: 26, lineHeight: 32, weight: 'bold', letterSpacing: -0.3 },
+  h3: { fontSize: 16, lineHeight: 22, weight: 'semibold', letterSpacing: -0.1 },
+  body: { fontSize: 15, lineHeight: 22, weight: 'regular' },
+  bodySm: { fontSize: 13, lineHeight: 18, weight: 'regular' },
   caption: { fontSize: 12, lineHeight: 16, weight: 'regular' },
-  button: { fontSize: 15, lineHeight: 24, weight: 'semibold', letterSpacing: 0.2 },
-  label: { fontSize: 13, lineHeight: 18, weight: 'semibold' },
+  button: { fontSize: 15, lineHeight: 20, weight: 'semibold', letterSpacing: 0.2 },
+  label: { fontSize: 13, lineHeight: 17, weight: 'semibold' },
 };

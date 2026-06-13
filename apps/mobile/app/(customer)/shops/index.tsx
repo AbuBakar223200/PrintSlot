@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   padded: {
-    padding: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
     gap: spacing.lg,
   },
   header: {
@@ -162,8 +162,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   listContent: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   list: {
     gap: spacing.md,

@@ -110,3 +110,8 @@ Prototype source of truth in parens. Status: ✅ parity · 🟡 partial · ❌ m
   filled button — now `ghost`, matching `.notif-row.unread` + `.btn-ghost`.
 - Raw hex (`#4F46E5`, `#FFFFFF`) in wallet hero shadow, tab badge text, duplex
   switch thumb — replaced with `tokens.primary` / `tokens.onPrimary`.
+- Spacing + type aligned to the prototype across all screens: screen gutter
+  `spacing.xl` (24) → `spacing.lg` (16) to match `.screen` padding; type ramp
+  (`fonts.ts`) retuned to prototype px — balance `44`, screen title `22`, detail
+  hero `26`, section/card `16`, body `15`. Scanner now flags raw `fontSize` in
+  screens (advisory) so ad-hoc sizes can't reintroduce drift.

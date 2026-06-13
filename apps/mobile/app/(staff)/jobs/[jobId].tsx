@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   scroll: {
-    padding: spacing.xl,
+    padding: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.lg,
   },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   footer: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
 });

@@ -175,18 +175,18 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.lg,
   },
   centerContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
-    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.lg,
   },
   listContent: {
-    padding: spacing.xl,
-    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: STAFF_TAB_BAR_HEIGHT + spacing.lg,
   },
   header: {
     alignItems: 'center',

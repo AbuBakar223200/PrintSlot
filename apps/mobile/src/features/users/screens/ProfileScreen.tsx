@@ -195,13 +195,13 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: spacing.xl,
+    padding: spacing.lg,
     gap: spacing.xl,
   },
   loading: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   hero: {
     flexDirection: 'row',

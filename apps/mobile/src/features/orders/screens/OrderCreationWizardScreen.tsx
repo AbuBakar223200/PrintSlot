@@ -721,13 +721,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
   progressBars: {
     flexDirection: 'row',
     gap: spacing.xs,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
   progressBar: {
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     gap: spacing.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     paddingBottom: spacing['3xl'],
   },
   stepHeader: {
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.md,
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   stateInline: {
     alignItems: 'center',

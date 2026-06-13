@@ -103,6 +103,15 @@ for (const dirName of SCAN_DIRS) {
       if (FALSY_AND.test(code) && !SAFE_AND.test(code)) {
         warnings.push(`${norm(rel)}:${ln}  falsy-and    guard with !! / > 0 →  ${line.trim()}`);
       }
+      // Raw font sizes in screens/features bypass the type ramp (fonts.ts) → drift.
+      // Primitives + the floating tab bars legitimately set sizes, so they're exempt.
+      if (
+        /\bfontSize:\s*\d/.test(code) &&
+        !palette &&
+        !norm(rel).includes('components/shared')
+      ) {
+        warnings.push(`${norm(rel)}:${ln}  font-size    use a <Text variant>, not raw fontSize →  ${line.trim()}`);
+      }
     });
   }
 }

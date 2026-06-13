@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   header: {
     gap: spacing.sm,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.hero,
     elevation: 8,
     gap: spacing.xs,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 24,
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.34,

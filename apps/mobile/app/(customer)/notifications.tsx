@@ -178,18 +178,18 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
-    padding: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   centerContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   listContent: {
-    padding: spacing.xl,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   header: {
     paddingBottom: spacing.lg,

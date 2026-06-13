@@ -417,14 +417,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   scroll: {
-    padding: spacing.xl,
+    padding: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.lg,
   },
   centerState: {
     flex: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   hero: {
     gap: spacing.sm,

@@ -186,9 +186,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.xl,
+    padding: spacing.lg,
     gap: spacing.lg,
-    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.xl,
+    paddingBottom: CUSTOMER_TAB_BAR_HEIGHT + spacing.lg,
   },
   header: {
     flexDirection: 'row',

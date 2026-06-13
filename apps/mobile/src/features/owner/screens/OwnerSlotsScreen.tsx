@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: OWNER_TAB_BAR_HEIGHT + spacing.xl,
+    padding: spacing.lg,
+    paddingBottom: OWNER_TAB_BAR_HEIGHT + spacing.lg,
   },
   header: {
     alignItems: 'center',
