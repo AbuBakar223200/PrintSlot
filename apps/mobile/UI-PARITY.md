@@ -86,11 +86,11 @@ Prototype source of truth in parens. Status: ✅ parity · 🟡 partial · ❌ m
 ### Owner
 | Screen | Prototype | Status |
 |---|---|---|
-| Shop | `SCREENS.ownerShop` | ❌ scaffold only (Slice 30 / #38) |
-| Jobs | `SCREENS.ownerJobs` | ❌ (Slice 31 / #39) |
-| Slots | `SCREENS.ownerSlots` | ❌ (Slice 31 / #39) |
-| Staff | `SCREENS.ownerStaff` | ❌ (Slice 26 / #34) |
-| Analytics | `SCREENS.ownerAnalytics` | ❌ (Slice 31 / #39) |
+| Shop | `SCREENS.ownerShop` | ✅ `app/(owner)/shop.tsx` (Slice 30 / #38) |
+| Jobs | `SCREENS.ownerJobs` | ✅ `app/(owner)/jobs.tsx` — reuses features/staff (Slice 31 / #39) |
+| Slots | `SCREENS.ownerSlots` | ✅ `app/(owner)/slots.tsx` (Slice 31 / #39) |
+| Staff | `SCREENS.ownerStaff` | ✅ `app/(owner)/staff.tsx` (Slice 26 / #34) |
+| Analytics | `SCREENS.ownerAnalytics` | ✅ `app/(owner)/analytics.tsx` — SVG donut (Slice 31 / #39) |
 
 ### Platform Admin
 | Screen | Prototype | Status |
