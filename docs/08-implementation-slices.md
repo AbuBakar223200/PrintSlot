@@ -25,6 +25,9 @@
 | Slice 16 | #24 | Order detail screen + real-time WebSocket tracking + StatusBadge | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 | Slice 18 | #26 | Order history screen + OrderCard + cancel flow | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 | Slice 20 | #28 | Staff job dashboard + job detail + status advance | Closed | Merged in PR #74 into `ihm/feat/ui-migration` on 2026-06-12; parity scanner + tsc + 105 tests pass. |
+| Slice 26 | #34 | Staff management screen in owner group | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 30 | #38 | (owner) route group — layout + shop screen | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 31 | #39 | (owner) slots, jobs, analytics screens | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 | Slice 32 | #40 | (customer) tab layout + home screen | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 
 ## Agent Rules
