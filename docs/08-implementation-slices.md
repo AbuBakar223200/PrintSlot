@@ -22,7 +22,10 @@
 | Slice 08 | #16 | Customer slot picker component | Open | GitHub issue #16 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/slot-picker-component-mobile`. |
 | Slice 11 | #19 | File picker + upload service + FilePickerCard | Closed | Merged in PR #69 on 2026-06-07; mobile/API/shared lint pass, mobile/API/shared tests pass. |
 | Slice 14 | #22 | Order creation wizard (4 steps) | Open | GitHub issue #22 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/order-creation-wizard-mobile`. |
+| Slice 16 | #24 | Order detail screen + real-time WebSocket tracking + StatusBadge | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 18 | #26 | Order history screen + OrderCard + cancel flow | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 | Slice 20 | #28 | Staff job dashboard + job detail + status advance | Closed | Merged in PR #74 into `ihm/feat/ui-migration` on 2026-06-12; parity scanner + tsc + 105 tests pass. |
+| Slice 32 | #40 | (customer) tab layout + home screen | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 
 ## Agent Rules
 
