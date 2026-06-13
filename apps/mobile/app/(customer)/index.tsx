@@ -1,7 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { Search, Store } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { Inbox, Search, Store } from 'lucide-react-native';
 import { FlashList } from '@shopify/flash-list';
 import { OrderStatus, type Order } from '@printslot/shared';
 import {
@@ -11,7 +12,7 @@ import {
   ButtonText,
   Card,
   EmptyState,
-  FrostCard,
+  Input,
   Screen,
   Skeleton,
   Text,
@@ -21,7 +22,9 @@ import { OrderCard } from '@/components/shared/OrderCard';
 import { spacing, useThemeTokens } from '@/theme';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useOrders } from '@/features/orders/hooks/useOrders';
+import { useShops } from '@/features/shops/hooks/useShops';
 import { useUnreadCount } from '@/features/notifications/hooks/useNotifications';
+import { ActiveOrderCard } from '@/features/orders/components/ActiveOrderCard';
 
 const ACTIVE_STATUSES = new Set<OrderStatus>([
   OrderStatus.QUEUED,
@@ -30,19 +33,44 @@ const ACTIVE_STATUSES = new Set<OrderStatus>([
   OrderStatus.READY,
 ]);
 
+interface ActiveItem {
+  order: Order;
+  shopName: string;
+}
+
 /**
- * Customer home landing (spec §8.3 shell). The full Home hub — search, active
- * orders, recent activity — lands with Slice 32. For now this is a reskinned
- * landing: time-agnostic greeting + Avatar→Profile + a Browse Shops CTA.
+ * Customer Home hub (prototype `SCREENS.home`): greeting + Avatar→Profile, a
+ * search field that routes to the shop list, a horizontal rail of active orders,
+ * a "recent orders" section with See-all, and a Browse Shops CTA. Shop names are
+ * resolved once at this parent and passed down as primitives (no per-card query).
  */
 export default function CustomerHomeScreen() {
   const tokens = useThemeTokens();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const unreadCount = useUnreadCount();
   const { data, isLoading } = useOrders();
-  const firstName = user?.name?.trim().split(/\s+/)[0] || 'there';
+  const { data: shops } = useShops();
+
+  const firstName = user?.name?.trim().split(/\s+/)[0] ?? '';
   const orders = data?.data ?? [];
-  const activeOrders = orders.filter((order) => ACTIVE_STATUSES.has(order.status)).slice(0, 4);
+
+  const shopNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const shop of shops ?? []) {
+      map.set(shop.id, shop.name);
+    }
+    return map;
+  }, [shops]);
+
+  const activeItems = useMemo<ActiveItem[]>(
+    () =>
+      orders
+        .filter((order) => ACTIVE_STATUSES.has(order.status))
+        .slice(0, 6)
+        .map((order) => ({ order, shopName: shopNames.get(order.shopId) ?? '' })),
+    [orders, shopNames],
+  );
   const recentOrders = orders.slice(0, 3);
 
   const openShops = useCallback(() => {
@@ -53,93 +81,102 @@ export default function CustomerHomeScreen() {
     router.push('/(customer)/profile' as never);
   }, []);
 
+  const openHistory = useCallback(() => {
+    router.push('/(customer)/orders' as never);
+  }, []);
+
   const openOrder = useCallback((id: string) => {
     router.push(`/(customer)/orders/${id}` as never);
   }, []);
 
-  const renderActiveOrder = useCallback(({ item }: { item: Order }) => (
+  const renderActiveOrder = useCallback(({ item }: { item: ActiveItem }) => (
     <View style={styles.activeOrderCard}>
-      <OrderCard order={item} onPress={openOrder} />
+      <ActiveOrderCard order={item.order} shopName={item.shopName} onPress={openOrder} />
     </View>
   ), [openOrder]);
 
   return (
     <View style={styles.root}>
       <Screen contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.grow}>
-          <Text variant="bodySm" color="textSecondary">Hello,</Text>
-          <Text variant="h1" color="textPrimary">{firstName}</Text>
-        </View>
-        <Pressable
-          onPress={openProfile}
-          accessibilityRole="button"
-          accessibilityLabel="Profile"
-          hitSlop={8}
-        >
-          <Avatar name={user?.name} size="md" />
-        </Pressable>
-      </View>
-
-      <FrostCard pad={20}>
-        <View style={styles.hero}>
-          <Text variant="h2" color="textPrimary">Print without waiting</Text>
-          <Text variant="body" color="textSecondary">
-            Find a nearby shop, upload files, and track pickup from one flow.
+        <View style={styles.header}>
+          <Text variant="h1" color="textPrimary" style={styles.grow} numberOfLines={1}>
+            {t('home.greeting', { name: firstName })}
           </Text>
           <Pressable
-            accessibilityLabel="Search shops"
+            onPress={openProfile}
             accessibilityRole="button"
-            onPress={openShops}
-            style={[styles.searchBar, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
+            accessibilityLabel={t('profile.title')}
+            hitSlop={8}
           >
-            <Search size={18} color={tokens.textMuted} />
-            <Text variant="bodySm" color="textMuted">Search shops</Text>
+            <Avatar name={user?.name} size="md" />
           </Pressable>
         </View>
-      </FrostCard>
 
-      <View style={styles.actions}>
-        <Button onPress={openShops} size="lg" testID="customer-shops-button">
-          <ButtonIcon><Store size={18} color={tokens.onPrimary} /></ButtonIcon>
-          <ButtonText>Browse Shops</ButtonText>
-        </Button>
-      </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('home.searchHint')}
+          onPress={openShops}
+        >
+          <View pointerEvents="none">
+            <Input
+              leftIcon={<Search size={18} color={tokens.textMuted} />}
+              placeholder={t('home.searchHint')}
+              editable={false}
+            />
+          </View>
+        </Pressable>
 
-      <View style={styles.section}>
-        <Text variant="h3" color="textPrimary">Active orders</Text>
-        {isLoading ? (
-          <Card style={styles.loadingCard}>
-            <Skeleton width="60%" height={16} />
-            <Skeleton width="85%" height={12} />
-          </Card>
-        ) : activeOrders.length > 0 ? (
-          <FlashList
-            data={activeOrders}
-            estimatedItemSize={210}
-            horizontal
-            keyExtractor={(item) => item.id}
-            renderItem={renderActiveOrder}
-            showsHorizontalScrollIndicator={false}
-          />
-        ) : (
-          <EmptyState icon={Store} title="No active orders" body="Start with a shop when you need prints." />
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text variant="h3" color="textPrimary">Recent orders</Text>
-        <View style={styles.recentList}>
-          {recentOrders.map((order) => (
-            <OrderCard key={order.id} order={order} onPress={openOrder} />
-          ))}
-          {!isLoading && recentOrders.length === 0 ? (
-            <Text variant="bodySm" color="textSecondary">Your recent orders will appear here.</Text>
-          ) : null}
+        <View style={styles.section}>
+          <Text variant="h3" color="textPrimary">{t('home.activeOrders')}</Text>
+          {isLoading ? (
+            <Card style={styles.loadingCard}>
+              <Skeleton width="60%" height={16} />
+              <Skeleton width="85%" height={12} />
+            </Card>
+          ) : activeItems.length > 0 ? (
+            <FlashList
+              data={activeItems}
+              estimatedItemSize={210}
+              horizontal
+              keyExtractor={(item) => item.order.id}
+              renderItem={renderActiveOrder}
+              showsHorizontalScrollIndicator={false}
+            />
+          ) : (
+            <EmptyState icon={Inbox} title={t('home.noActive')} body={t('home.noActiveSub')} />
+          )}
         </View>
-      </View>
-    </Screen>
-    <CustomerTabBar active="home" unreadCount={unreadCount} />
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text variant="h3" color="textPrimary" style={styles.grow}>
+              {t('home.recentOrders')}
+            </Text>
+            <Pressable onPress={openHistory} accessibilityRole="button" hitSlop={8}>
+              <Text variant="label" color="primary">{t('common.seeAll')}</Text>
+            </Pressable>
+          </View>
+          <View style={styles.recentList}>
+            {recentOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                shopName={shopNames.get(order.shopId)}
+                onPress={openOrder}
+              />
+            ))}
+            {!isLoading && recentOrders.length === 0 ? (
+              <Text variant="bodySm" color="textSecondary">{t('history.emptySub')}</Text>
+            ) : null}
+          </View>
+        </View>
+
+        <Button onPress={openShops} variant="secondary" size="lg" testID="customer-shops-button">
+          <ButtonIcon><Store size={18} color={tokens.primary} /></ButtonIcon>
+          <ButtonText>{t('home.browseShops')}</ButtonText>
+        </Button>
+      </Screen>
+      <CustomerTabBar active="home" unreadCount={unreadCount} />
     </View>
   );
 }
@@ -160,30 +197,18 @@ const styles = StyleSheet.create({
   },
   grow: {
     flex: 1,
-    gap: 2,
-  },
-  hero: {
-    gap: spacing.md,
-  },
-  searchBar: {
-    alignItems: 'center',
-    borderCurve: 'continuous',
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    minHeight: 50,
-    paddingHorizontal: spacing.md,
-  },
-  actions: {
-    gap: spacing.md,
   },
   section: {
     gap: spacing.md,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   activeOrderCard: {
     marginRight: spacing.md,
-    width: 284,
+    width: 264,
   },
   loadingCard: {
     gap: spacing.sm,
