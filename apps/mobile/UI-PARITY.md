@@ -67,11 +67,11 @@ Prototype source of truth in parens. Status: ✅ parity · 🟡 partial · ❌ m
 |---|---|---|
 | Login | `SCREENS.login` | ✅ |
 | Register | `SCREENS.register` | ✅ |
-| Home | `SCREENS.home` | 🟡 stopgap landing — needs search + active scroller + recent + see-all (Slice 32 / #40) |
+| Home | `SCREENS.home` | ✅ hub: search + active-order rail + recent + see-all (Slice 32 / #40) |
 | Shop list | `SCREENS.shops` | ✅ |
 | Shop detail | `SCREENS.shopDetail` | ✅ |
 | Order wizard | `SCREENS.wizard` | ✅ |
-| Order detail | `SCREENS.orderDetail` | ❌ empty (Slice 16 / #24) |
+| Order detail | `SCREENS.orderDetail` | ✅ timeline + live tracking (socket) + cancel (Slice 16 / #24) |
 | Order history | `SCREENS.history` | ✅ |
 | Wallet | `SCREENS.wallet` | ✅ |
 | Notifications | `SCREENS.notifications` | ✅ |
@@ -80,8 +80,8 @@ Prototype source of truth in parens. Status: ✅ parity · 🟡 partial · ❌ m
 ### Staff
 | Screen | Prototype | Status |
 |---|---|---|
-| Job dashboard | `SCREENS.staffJobs` | 🟡 thin (Slice 20 / #28) |
-| Job detail | `SCREENS.jobDetail` | ❌ empty (Slice 20 / #28) |
+| Job dashboard | `SCREENS.staffJobs` | ✅ slot + walk-in sections (Slice 20 / #28) |
+| Job detail | `SCREENS.jobDetail` | ✅ per-file config + status advance (Slice 20 / #28) |
 
 ### Owner
 | Screen | Prototype | Status |
@@ -95,10 +95,10 @@ Prototype source of truth in parens. Status: ✅ parity · 🟡 partial · ❌ m
 ### Platform Admin
 | Screen | Prototype | Status |
 |---|---|---|
-| Shop approval | `SCREENS.adminShops` | 🟡 partial (Slice 28 / #36) |
-| Analytics | `SCREENS.adminAnalytics` | ❌ (Slice 29 / #37) |
-| Config | `SCREENS.adminConfig` | ❌ (Slice 29 / #37) |
-| Slot templates | `SCREENS.adminTemplates` | ❌ (Slice 29 / #37) |
+| Shop approval | `SCREENS.adminShops` | ✅ `app/(admin)/shops.tsx` — approve/reject/suspend/reinstate (Slice 28 / #36) |
+| Analytics | `SCREENS.adminAnalytics` | ✅ `app/(admin)/analytics.tsx` — SVG revenue bars (Slice 29 / #37) |
+| Config | `SCREENS.adminConfig` | ✅ `app/(admin)/config.tsx` — edit sheets (Slice 29 / #37) |
+| Slot templates | `SCREENS.adminTemplates` | ✅ `app/(admin)/templates.tsx` — add/edit/soft-delete (Slice 29 / #37) |
 
 ---
 
