@@ -1,7 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Plus, Receipt } from 'lucide-react-native';
 import type { Order } from '@printslot/shared';
 import {
@@ -18,14 +19,25 @@ import { OrderCard } from '@/components/shared/OrderCard';
 import { spacing, useThemeTokens } from '@/theme';
 import { useUnreadCount } from '@/features/notifications/hooks/useNotifications';
 import { useOrders } from '@/features/orders/hooks/useOrders';
+import { useShops } from '@/features/shops/hooks/useShops';
 
 const SKELETON_ROWS = ['o1', 'o2', 'o3'];
 
 export default function CustomerOrdersScreen() {
   const tokens = useThemeTokens();
+  const { t } = useTranslation();
   const unreadCount = useUnreadCount();
   const { data, isError, isLoading, isRefetching, refetch } = useOrders();
+  const { data: shops } = useShops();
   const orders = data?.data ?? [];
+
+  const shopNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const shop of shops ?? []) {
+      map.set(shop.id, shop.name);
+    }
+    return map;
+  }, [shops]);
 
   const openOrder = useCallback((id: string) => {
     router.push(`/(customer)/orders/${id}` as never);
@@ -40,14 +52,14 @@ export default function CustomerOrdersScreen() {
   }, [refetch]);
 
   const renderOrder = useCallback(({ item }: { item: Order }) => (
-    <OrderCard order={item} onPress={openOrder} />
-  ), [openOrder]);
+    <OrderCard order={item} shopName={shopNames.get(item.shopId)} onPress={openOrder} />
+  ), [openOrder, shopNames]);
 
   if (isLoading) {
     return (
       <View style={styles.root}>
         <Screen contentContainerStyle={styles.content}>
-          <Header />
+          <Header title={t('history.title')} />
           <View style={styles.list}>
             {SKELETON_ROWS.map((id) => (
               <View key={id} style={styles.skeletonCard}>
@@ -69,9 +81,9 @@ export default function CustomerOrdersScreen() {
         <Screen contentContainerStyle={styles.centerContent}>
           <EmptyState
             icon={Receipt}
-            title="Could not load orders"
-            body="Pull again in a moment."
-            cta={{ label: 'Retry', onPress: retry }}
+            title={t('history.empty')}
+            body={t('history.emptySub')}
+            cta={{ label: t('common.retry'), onPress: retry }}
           />
         </Screen>
         <CustomerTabBar active="orders" unreadCount={unreadCount} />
@@ -91,34 +103,31 @@ export default function CustomerOrdersScreen() {
           ListEmptyComponent={(
             <EmptyState
               icon={Receipt}
-              title="No orders yet"
-              body="Choose a shop and your print history will appear here."
-              cta={{ label: 'Browse shops', onPress: openShops }}
+              title={t('history.empty')}
+              body={t('history.emptySub')}
+              cta={{ label: t('home.browseShops'), onPress: openShops }}
             />
           )}
-          ListHeaderComponent={<Header />}
+          ListHeaderComponent={<Header title={t('history.title')} />}
           onRefresh={retry}
           refreshing={isRefetching && !isLoading}
           renderItem={renderOrder}
           showsVerticalScrollIndicator={false}
         />
       </Screen>
-      <Button onPress={openShops} size="sm" style={styles.fab} accessibilityLabel="New order">
+      <Button onPress={openShops} size="sm" style={styles.fab} accessibilityLabel={t('history.newOrder')}>
         <ButtonIcon><Plus size={18} color={tokens.onPrimary} /></ButtonIcon>
-        <ButtonText>New Order</ButtonText>
+        <ButtonText>{t('history.newOrder')}</ButtonText>
       </Button>
       <CustomerTabBar active="orders" unreadCount={unreadCount} />
     </View>
   );
 }
 
-function Header() {
+function Header({ title }: { title: string }) {
   return (
     <View style={styles.header}>
-      <Text variant="h1" color="textPrimary">Orders</Text>
-      <Text variant="body" color="textSecondary">
-        Track active print jobs and review your history.
-      </Text>
+      <Text variant="h1" color="textPrimary">{title}</Text>
     </View>
   );
 }
