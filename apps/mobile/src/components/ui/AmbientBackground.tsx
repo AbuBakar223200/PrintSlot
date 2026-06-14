@@ -21,7 +21,7 @@ import { useTheme } from '@/theme';
  * (Fork 13). Mounted once by the `Screen` primitive; content rides on top.
  */
 export function AmbientBackground() {
-  const { tokens, tones, reduceMotion } = useTheme();
+  const { tokens, reduceMotion } = useTheme();
   const t = useSharedValue(0);
 
   useEffect(() => {
@@ -57,14 +57,21 @@ export function AmbientBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <LinearGradient
-        colors={tokens.bgGradient}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
+        // Prototype `.ambient .base` is a radial wash from the top
+        // (`bg-a 0% → bg-b 55% → bg-b 100%`). expo-linear-gradient has no radial,
+        // so approximate with a vertical wash: lavender (bg-a) tops the screen and
+        // fades into the airy / near-black base (bg-b), which dominates the rest —
+        // matching the prototype far better than the old diagonal bg-a→bg-b→bg-c
+        // that tinted the bottom-right corner.
+        colors={[tokens.bgGradient[0], tokens.bgGradient[1], tokens.bgGradient[1]]}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
       <Animated.View style={[styles.blob, styles.top, blobTop]}>
         <LinearGradient
-          colors={[tones.primary.bg, 'transparent']}
+          colors={[tokens.bgGradient[0], 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -72,7 +79,7 @@ export function AmbientBackground() {
       </Animated.View>
       <Animated.View style={[styles.blob, styles.bottom, blobBottom]}>
         <LinearGradient
-          colors={[tones.violet.bg, 'transparent']}
+          colors={[tokens.bgGradient[2], 'transparent']}
           start={{ x: 1, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
