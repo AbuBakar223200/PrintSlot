@@ -14,11 +14,12 @@ export interface UpdateShopStatusInput {
 
 export const adminShopService = {
   /**
-   * Every shop in the platform (`GET /shops` — PLATFORM_ADMIN sees all). The
-   * approval queue filters this client-side by status (PENDING vs ALL).
+   * Every shop in the platform (`GET /admin/shops` — PLATFORM_ADMIN, all
+   * statuses). The public `GET /shops` is ACTIVE-only, so the approval queue uses
+   * this admin-scoped endpoint and filters client-side by status (PENDING vs ALL).
    */
   async listShops(): Promise<Shop[]> {
-    const result = await apiFetch<ShopListResult>('/shops');
+    const result = await apiFetch<ShopListResult>('/admin/shops');
     return result.items;
   },
 

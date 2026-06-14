@@ -350,6 +350,102 @@ export class OrdersService {
     return Math.round(decimal.toNumber() * 100) / 100;
   }
 
+  /**
+   * Flatten a Prisma order (with `customer` + `slot.template` + `orderFiles`
+   * included) into the counter-facing view shape: numeric prices, plus flat
+   * `customerName` / `customerPhone` / `slotTime` (window for SLOT mode only).
+   * Keeps the nested `shop` / `slot` / `orderFiles` so existing consumers are
+   * unaffected — the flat fields are additive.
+   */
+  private flattenOrderView(order: any): any {
+    const template = order.slot?.template;
+    const slotTime =
+      order.pickupMode === 'SLOT' && template
+        ? `${template.startTime}–${template.endTime}`
+        : null;
+    return {
+      ...order,
+      totalPrice: Number(order.totalPrice?.toString?.() ?? order.totalPrice),
+      customerName: order.customer?.name ?? null,
+      customerPhone: order.customer?.phone ?? null,
+      slotTime,
+      orderFiles: Array.isArray(order.orderFiles)
+        ? order.orderFiles.map((f: any) => ({
+            ...f,
+            subtotalPrice: Number(f.subtotalPrice?.toString?.() ?? f.subtotalPrice),
+          }))
+        : order.orderFiles,
+    };
+  }
+
+  /**
+   * Shop-scoped order queue for the staff dashboard + owner jobs tab
+   * (`GET /shops/:id/orders`). Optional `statuses` filter; SLOT pickups sorted
+   * before walk-in QUEUE. Returns `{ items, total, page, limit }` with the
+   * flattened counter view (customer name/phone + slot window).
+   */
+  async listShopOrders(
+    shopId: string,
+    currentUser: any,
+    statuses?: string[],
+    queryPage?: number | string,
+    queryLimit?: number | string,
+  ): Promise<{ items: any[]; total: number; page: number; limit: number }> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, ownerId: true },
+    });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const isStaff = currentUser.role === 'STAFF' && currentUser.shopId === shopId;
+    const isOwner = currentUser.role === 'SHOP_OWNER' && shop.ownerId === currentUser.id;
+    const isAdmin = currentUser.role === 'PLATFORM_ADMIN';
+    if (!isStaff && !isOwner && !isAdmin) {
+      throw new ForbiddenException('You do not have access to this shop.');
+    }
+
+    const where: Prisma.OrderWhereInput = { shopId };
+    if (statuses && statuses.length > 0) {
+      where.status = { in: statuses as any };
+    }
+
+    const allOrders = await this.prisma.order.findMany({
+      where,
+      include: {
+        orderFiles: true,
+        slot: { include: { template: true } },
+        shop: true,
+        customer: true,
+      },
+    });
+
+    // SLOT pickups first (by slot date then start time), then walk-in QUEUE by createdAt.
+    allOrders.sort((a, b) => {
+      if (a.pickupMode === 'SLOT' && b.pickupMode !== 'SLOT') return -1;
+      if (a.pickupMode !== 'SLOT' && b.pickupMode === 'SLOT') return 1;
+      if (a.pickupMode === 'SLOT' && b.pickupMode === 'SLOT') {
+        const dateA = a.slot?.date?.getTime?.() ?? 0;
+        const dateB = b.slot?.date?.getTime?.() ?? 0;
+        if (dateA !== dateB) return dateA - dateB;
+        const timeA = a.slot?.template?.startTime || '';
+        const timeB = b.slot?.template?.startTime || '';
+        return timeA.localeCompare(timeB);
+      }
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    const page = Math.max(1, Number(queryPage || 1));
+    const limit = Math.min(100, Math.max(1, Number(queryLimit || 50)));
+    const total = allOrders.length;
+    const items = allOrders
+      .slice((page - 1) * limit, (page - 1) * limit + limit)
+      .map((o) => this.flattenOrderView(o));
+
+    return { items, total, page, limit };
+  }
+
   async getOrderWithSlotAndShop(orderId: string) {
     return this.prisma.order.findUnique({
       where: { id: orderId },
@@ -564,6 +660,7 @@ export class OrdersService {
         orderFiles: true,
         shop: true,
         slot: { include: { template: true } },
+        customer: true,
       },
     });
 
@@ -593,7 +690,7 @@ export class OrdersService {
     }
 
     return {
-      ...order,
+      ...this.flattenOrderView(order),
       queuePosition,
       etaMins,
     };

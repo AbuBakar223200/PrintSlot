@@ -93,4 +93,31 @@ export class AdminService {
       revenuePerShop,
     };
   }
+
+  /**
+   * Every shop on the platform for the admin approval queue (`GET /admin/shops`).
+   * Unlike the public `GET /shops` (ACTIVE only), this returns all statuses so the
+   * admin can approve/reject/suspend. Optional `status` filter. PENDING first.
+   * Returns the `ShopListResult` shape (`{ items, total, page, limit }`) the
+   * mobile approval screen already consumes.
+   */
+  async listAllShops(
+    status?: string,
+  ): Promise<{ items: any[]; total: number; page: number; limit: number }> {
+    const where: Prisma.ShopWhereInput = status
+      ? { status: status as any }
+      : {};
+    const shops = await this.prisma.shop.findMany({
+      where,
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+    });
+    const items = shops.map((s) => ({
+      ...s,
+      colorRate: Number(s.colorRate),
+      bwRate: Number(s.bwRate),
+      a3Surcharge: Number(s.a3Surcharge),
+      duplexDiscount: Number(s.duplexDiscount),
+    }));
+    return { items, total: items.length, page: 1, limit: items.length };
+  }
 }

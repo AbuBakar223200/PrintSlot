@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
+import { ShopOrdersController } from './shop-orders.controller';
 import { OrdersService } from './orders.service';
 import { SlotsModule } from '../slots/slots.module';
 import { WalletModule } from '../wallet/wallet.module';
@@ -9,7 +10,7 @@ import { OrdersGateway } from './orders.gateway';
 
 @Module({
   imports: [SlotsModule, WalletModule, NotificationsModule],
-  controllers: [OrdersController],
+  controllers: [OrdersController, ShopOrdersController],
   providers: [OrdersService, CloudinaryProvider, OrdersGateway],
   exports: [OrdersService, OrdersGateway],
 })
