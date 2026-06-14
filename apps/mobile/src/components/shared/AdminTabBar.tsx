@@ -93,7 +93,7 @@ export function AdminTabBar({ active }: AdminTabBarProps) {
   );
 }
 
-export const ADMIN_TAB_BAR_HEIGHT = 104;
+export const ADMIN_TAB_BAR_HEIGHT = 112;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -113,12 +113,12 @@ const styles = StyleSheet.create({
   tint: {
     flexDirection: 'row',
     gap: spacing.xs,
-    padding: spacing.xs,
+    padding: spacing.sm,
   },
   tab: {
     alignItems: 'center',
     borderCurve: 'continuous',
-    borderRadius: radii.control,
+    borderRadius: 16,
     flex: 1,
     gap: 3,
     justifyContent: 'center',
