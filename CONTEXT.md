@@ -2,6 +2,12 @@
 
 Read this before touching any file.
 
+> **🎨 UI Ground Truth (mobile).** For ANY mobile UI work, two references are authoritative and must be read first:
+> 1. **`docs/09-ui-ux-design-spec.md`** — the locked design system + per-screen spec.
+> 2. **`prototype/`** — the interactive high-fidelity prototype (open `prototype/index.html`); the visual source of truth.
+>
+> **Precedence on conflict:** the **prototype + spec define the visual / interaction design**; the **PRD / CONTEXT / `docs/05-api-contract.md` define behavior & feature scope**. If they disagree, **PRD wins for behavior, the prototype wins for look** (e.g. the prototype's customer wallet "Top Up" button is a demo artifact the PRD forbids — it stays out). Never ship UI that diverges from these two.
+
 ---
 
 ## Document Map
@@ -22,6 +28,7 @@ Use this to know which file to open before doing any work.
 | Coding rules, patterns, examples for NestJS + React Native | `docs/CODING_STANDARDS.md` |
 | Known risks and mitigations | `docs/07-risk-register.md` |
 | Implementation slice status and GitHub issue mapping | `docs/08-implementation-slices.md` |
+| UI/UX design system, tokens, per-screen spec (read before any mobile UI work) | docs/09-ui-ux-design-spec.md |
 | What is explicitly NOT being built in v1 | `docs/PRD.md` §4 (Non-Goals) — summary below |
 
 ---

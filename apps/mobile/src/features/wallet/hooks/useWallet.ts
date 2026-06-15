@@ -9,3 +9,10 @@ export function useWalletBalance() {
     refetchOnMount: 'always',
   });
 }
+
+export function useWalletTransactions() {
+  return useQuery({
+    queryKey: ['wallet', 'transactions'],
+    queryFn: () => walletService.getTransactions(),
+  });
+}

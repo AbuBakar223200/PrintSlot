@@ -67,4 +67,16 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   orderFiles: OrderFile[];
+  /**
+   * Counter-view extras populated by the API on shop-scoped reads
+   * (`GET /shops/:id/orders`, `GET /orders/:id`): the customer's name + phone
+   * and the resolved slot window ("HH:MM–HH:MM", SLOT mode only). Optional —
+   * absent on customer list reads where they are not needed.
+   */
+  customerName?: string | null;
+  customerPhone?: string | null;
+  slotTime?: string | null;
+  /** Live queue position + ETA (minutes), present only while QUEUED/PROCESSING. */
+  queuePosition?: number | null;
+  etaMins?: number | null;
 }

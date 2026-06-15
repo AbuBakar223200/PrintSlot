@@ -1,6 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { radii, spacing, useThemeTokens } from '@/theme';
+import { Text } from '@/components/ui';
 
 export interface DateChipProps {
   date: string;
@@ -19,6 +20,8 @@ function DateChipComponent({
   onPress,
   testID,
 }: DateChipProps) {
+  const tokens = useThemeTokens();
+
   const handlePress = useCallback(() => {
     onPress(date);
   }, [date, onPress]);
@@ -28,20 +31,25 @@ function DateChipComponent({
       accessibilityLabel={`${label} ${dayOfMonth}`}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      android_ripple={{ color: colors.borderLight }}
+      android_ripple={{ color: tokens.border }}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.root,
-        selected ? styles.selected : null,
+        { backgroundColor: tokens.surface, borderColor: tokens.border },
+        selected ? { backgroundColor: tokens.primary, borderColor: tokens.primary } : null,
         pressed ? styles.pressed : null,
       ]}
       testID={testID}
     >
       <View style={styles.content}>
-        <Text style={[styles.label, selected ? styles.selectedText : null]}>
+        <Text
+          variant="caption"
+          color={selected ? 'onPrimary' : 'textSecondary'}
+          style={styles.label}
+        >
           {label}
         </Text>
-        <Text style={[styles.day, selected ? styles.selectedText : null]}>
+        <Text variant="h3" color={selected ? 'onPrimary' : 'textPrimary'}>
           {dayOfMonth}
         </Text>
       </View>
@@ -53,20 +61,14 @@ export const DateChip = memo(DateChipComponent);
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     flex: 1,
     minHeight: 72,
     minWidth: 68,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
-  },
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   pressed: {
     opacity: 0.9,
@@ -77,15 +79,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    ...typography.caption,
-    color: colors.textSecondary,
     fontWeight: '600',
-  },
-  day: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  selectedText: {
-    color: colors.textInverse,
   },
 });

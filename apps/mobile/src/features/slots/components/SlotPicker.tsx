@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import type { Slot } from '@printslot/shared';
-import { Button, ButtonText } from '@/components/ui/Button';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { Button, ButtonText, Text } from '@/components/ui';
+import { radii, spacing, useThemeTokens } from '@/theme';
 import { DateChip } from '@/features/slots/components/DateChip';
 import { SlotChip } from '@/features/slots/components/SlotChip';
 import { useShopSlots } from '@/features/slots/hooks/useShopSlots';
@@ -24,6 +24,7 @@ const EMPTY_SLOTS: Slot[] = [];
 const LOADING_CHIPS = ['slot-skeleton-1', 'slot-skeleton-2', 'slot-skeleton-3'];
 
 export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
+  const tokens = useThemeTokens();
   const dateOptions = useMemo(() => getDateChipOptions(4), []);
   const [selectedDate, setSelectedDate] = useState(() => (
     dateOptions[0]?.date ?? formatLocalDate(new Date())
@@ -58,6 +59,11 @@ export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
 
   const retryLabel = slotPickerText(slotPickerKeys.retry);
 
+  const stateBoxStyle = [
+    styles.stateBox,
+    { backgroundColor: tokens.surface, borderColor: tokens.border },
+  ];
+
   return (
     <View style={styles.root}>
       <View style={styles.dateRow}>
@@ -88,15 +94,26 @@ export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
           testID="slot-picker-loading"
         >
           {LOADING_CHIPS.map((id) => (
-            <View key={id} style={styles.loadingChip} testID="slot-picker-loading-chip" />
+            <View
+              key={id}
+              style={[
+                styles.loadingChip,
+                { backgroundColor: tokens.skeletonBase, borderColor: tokens.border },
+              ]}
+              testID="slot-picker-loading-chip"
+            />
           ))}
         </View>
       ) : null}
 
       {!isLoading && isError ? (
-        <View style={styles.stateBox}>
-          <Text style={styles.stateTitle}>{slotPickerText(slotPickerKeys.errorTitle)}</Text>
-          <Text style={styles.stateText}>{slotPickerText(slotPickerKeys.errorBody)}</Text>
+        <View style={stateBoxStyle}>
+          <Text variant="h3" color="textPrimary" align="center">
+            {slotPickerText(slotPickerKeys.errorTitle)}
+          </Text>
+          <Text variant="bodySm" color="textSecondary" align="center">
+            {slotPickerText(slotPickerKeys.errorBody)}
+          </Text>
           <Button onPress={retry} size="sm" testID="slot-picker-retry-button">
             <ButtonText>{retryLabel}</ButtonText>
           </Button>
@@ -104,8 +121,10 @@ export function SlotPicker({ shopId, value, onChange }: SlotPickerProps) {
       ) : null}
 
       {!isLoading && !isError && slots.length === 0 ? (
-        <View style={styles.stateBox}>
-          <Text style={styles.stateText}>{slotPickerText(slotPickerKeys.noSlots)}</Text>
+        <View style={stateBoxStyle}>
+          <Text variant="bodySm" color="textSecondary" align="center">
+            {slotPickerText(slotPickerKeys.noSlots)}
+          </Text>
         </View>
       ) : null}
 
@@ -142,33 +161,19 @@ const styles = StyleSheet.create({
     minHeight: 76,
   },
   loadingChip: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     minHeight: 76,
     width: 136,
   },
   stateBox: {
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.card,
     borderWidth: 1,
     gap: spacing.md,
     padding: spacing.lg,
-  },
-  stateTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  stateText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    textAlign: 'center',
   },
   slotList: {
     minHeight: 84,

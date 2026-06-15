@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { radii, spacing, useThemeTokens } from '@/theme';
+import { Text } from '@/components/ui';
 import { slotPickerKeys, slotPickerText } from '@/features/slots/i18n/slotPickerCopy';
 
 export interface SlotChipProps {
@@ -20,13 +21,15 @@ function SlotChipComponent({
   selected,
   onPress,
 }: SlotChipProps) {
+  const tokens = useThemeTokens();
+
   const handlePress = useCallback(() => {
     onPress(id);
   }, [id, onPress]);
 
   const timeRange = useMemo(() => {
     if (startTime && endTime) {
-      return `${startTime} \u2013 ${endTime}`;
+      return `${startTime} – ${endTime}`;
     }
 
     return slotPickerText(slotPickerKeys.unknownTime);
@@ -39,20 +42,25 @@ function SlotChipComponent({
       accessibilityLabel={`${timeRange}, ${remainingLabel}`}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      android_ripple={{ color: colors.borderLight }}
+      android_ripple={{ color: tokens.border }}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.root,
-        selected ? styles.selected : null,
+        { backgroundColor: tokens.surface, borderColor: tokens.border },
+        selected ? { backgroundColor: tokens.primary, borderColor: tokens.primary } : null,
         pressed ? styles.pressed : null,
       ]}
       testID={`slot-picker-slot-${id}`}
     >
       <View style={styles.content}>
-        <Text style={[styles.time, selected ? styles.selectedText : null]}>
+        <Text variant="body" color={selected ? 'onPrimary' : 'textPrimary'} style={styles.time}>
           {timeRange}
         </Text>
-        <Text style={[styles.remaining, selected ? styles.selectedRemaining : null]}>
+        <Text
+          variant="bodySm"
+          color={selected ? 'onPrimary' : 'textSecondary'}
+          style={selected ? styles.selectedRemaining : undefined}
+        >
           {remainingLabel}
         </Text>
       </View>
@@ -64,20 +72,14 @@ export const SlotChip = memo(SlotChipComponent);
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     marginRight: spacing.md,
     minHeight: 76,
     minWidth: 136,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-  },
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   pressed: {
     opacity: 0.9,
@@ -87,19 +89,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   time: {
-    ...typography.body,
-    color: colors.textPrimary,
     fontWeight: '700',
   },
-  remaining: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-  },
-  selectedText: {
-    color: colors.textInverse,
-  },
   selectedRemaining: {
-    color: colors.textInverse,
     fontWeight: '700',
   },
 });

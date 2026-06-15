@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PrintSlot — Design Prototype</title>
+  <meta name="description" content="High-fidelity static HTML design prototype of the PrintSlot mobile app." />
+
+  <!-- Fonts: Inter (Latin) + Hind Siliguri (Bengali) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================== Page heading ===================== -->
+  <header class="page-head">
+    <div class="page-title"><span class="ps-mark">●</span> PrintSlot — Design Prototype</div>
+    <div class="page-sub">Interactive UI/UX mockup · static HTML · not the production app</div>
+  </header>
+
+  <!-- ===================== Control bar ===================== -->
+  <div class="controls" role="toolbar" aria-label="Prototype controls">
+    <div class="ctl-group" role="group" aria-label="Role">
+      <button data-ctl-role="CUSTOMER"><i data-lucide="user"></i>Customer</button>
+      <button data-ctl-role="STAFF"><i data-lucide="badge-check"></i>Staff</button>
+      <button data-ctl-role="SHOP_OWNER"><i data-lucide="store"></i>Owner</button>
+      <button data-ctl-role="PLATFORM_ADMIN"><i data-lucide="shield"></i>Admin</button>
+    </div>
+    <div class="ctl-group" role="group" aria-label="Theme">
+      <button data-ctl-theme="light"><i data-lucide="sun"></i>Light</button>
+      <button data-ctl-theme="dark"><i data-lucide="moon"></i>Dark</button>
+    </div>
+    <div class="ctl-group" role="group" aria-label="Language">
+      <button data-ctl-lang="en">EN</button>
+      <button data-ctl-lang="bn">বাংলা</button>
+    </div>
+    <button class="ctl-reset" id="ctlOffline" aria-label="Toggle offline"><i data-lucide="wifi-off"></i>Offline</button>
+    <button class="ctl-reset" id="ctlReset" aria-label="Reset prototype"><i data-lucide="rotate-ccw"></i>Reset</button>
+  </div>
+
+  <!-- ===================== Device frame ===================== -->
+  <div class="device" id="screen-root">
+    <div class="device-screen">
+      <!-- ambient animated gradient -->
+      <div class="ambient" aria-hidden="true">
+        <div class="base"></div>
+        <div class="blob3"></div>
+      </div>
+
+      <!-- notch + status bar -->
+      <div class="notch" aria-hidden="true"></div>
+      <div class="statusbar" aria-hidden="true">
+        <span>9:41</span>
+        <span class="sb-right"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span>
+      </div>
+
+      <!-- app viewport (filled by app.js) -->
+      <div class="app" id="app"></div>
+    </div>
+  </div>
+
+  <!-- ===================== Scripts ===================== -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

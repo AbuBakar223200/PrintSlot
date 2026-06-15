@@ -12,17 +12,20 @@ import {
   OrderStatus,
 } from '@printslot/shared';
 import { useCreateOrder, usePreviewPrice } from '../hooks/useOrders';
+import { useCancelOrder } from '../hooks/useOrder';
 import { orderService } from '../services/orderService';
 
 jest.mock('../services/orderService', () => ({
   orderService: {
     previewPrice: jest.fn(),
     createOrder: jest.fn(),
+    cancelOrder: jest.fn(),
   },
 }));
 
 const mockPreviewPrice = orderService.previewPrice as jest.Mock;
 const mockCreateOrder = orderService.createOrder as jest.Mock;
+const mockCancelOrder = orderService.cancelOrder as jest.Mock;
 
 const createInput: CreateOrderInput = {
   shopId: '11111111-1111-4111-8111-111111111111',
@@ -86,6 +89,7 @@ function wrapper(client: QueryClient) {
 beforeEach(() => {
   mockPreviewPrice.mockReset();
   mockCreateOrder.mockReset();
+  mockCancelOrder.mockReset();
 });
 
 describe('order hooks', () => {
@@ -126,5 +130,24 @@ describe('order hooks', () => {
       message: 'Insufficient wallet balance',
       statusCode: 402,
     });
+  });
+
+  it('useCancelOrder seeds the order cache and invalidates orders + wallet on success', async () => {
+    const cancelled = { ...order, status: OrderStatus.CANCELLED };
+    mockCancelOrder.mockResolvedValueOnce(cancelled);
+    const client = createClient();
+    const setSpy = jest.spyOn(client, 'setQueryData');
+    const invalidateSpy = client.invalidateQueries as jest.Mock;
+    const { result } = renderHook(() => useCancelOrder(), { wrapper: wrapper(client) });
+
+    await act(async () => {
+      await result.current.mutateAsync(order.id);
+    });
+
+    expect(mockCancelOrder).toHaveBeenCalledWith(order.id);
+    expect(setSpy).toHaveBeenCalledWith(['orders', order.id], cancelled);
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['orders', order.id] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['orders'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['wallet', 'balance'] });
   });
 });

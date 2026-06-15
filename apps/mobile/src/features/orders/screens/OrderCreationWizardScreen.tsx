@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -20,8 +18,8 @@ import {
   type PreviewPriceInput,
   type PricedOrderFile,
 } from '@printslot/shared';
-import { Button, ButtonText } from '@/components/ui/Button';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { AmbientBackground, Button, ButtonText, Card, Sheet, Text } from '@/components/ui';
+import { radii, spacing, useThemeTokens } from '@/theme';
 import { FilePickerSection } from '@/features/upload/components/FilePickerSection';
 import { SlotPicker } from '@/features/slots/components/SlotPicker';
 import { useWalletBalance } from '@/features/wallet/hooks/useWallet';
@@ -45,6 +43,13 @@ export interface OrderCreationWizardScreenProps {
 }
 
 type ApiStatusError = Error & { statusCode?: number };
+type WizardSheet = {
+  title: string;
+  body: string;
+  primaryLabel?: string;
+  primaryAction?: () => void;
+  danger?: boolean;
+} | null;
 
 type PreviewRow = {
   id: string;
@@ -210,6 +215,8 @@ export function OrderCreationWizardScreen({
   shopId,
   mode,
 }: OrderCreationWizardScreenProps) {
+  const tokens = useThemeTokens();
+  const [sheet, setSheet] = React.useState<WizardSheet>(null);
   const storeShopId = useOrderWizardStore((state) => state.shopId);
   const storeMode = useOrderWizardStore((state) => state.mode);
   const step = useOrderWizardStore((state) => state.step);
@@ -253,23 +260,19 @@ export function OrderCreationWizardScreen({
   }, [mode, setStep, step]);
 
   const discardAndBack = useCallback(() => {
+    setSheet(null);
     reset();
     router.back();
   }, [reset]);
 
   const confirmDiscard = useCallback(() => {
-    Alert.alert(
-      orderWizardText(orderWizardKeys.discardTitle),
-      orderWizardText(orderWizardKeys.discardBody),
-      [
-        { text: orderWizardText(orderWizardKeys.keepEditing), style: 'cancel' },
-        {
-          text: orderWizardText(orderWizardKeys.discard),
-          style: 'destructive',
-          onPress: discardAndBack,
-        },
-      ],
-    );
+    setSheet({
+      title: orderWizardText(orderWizardKeys.discardTitle),
+      body: orderWizardText(orderWizardKeys.discardBody),
+      primaryLabel: orderWizardText(orderWizardKeys.discard),
+      primaryAction: discardAndBack,
+      danger: true,
+    });
   }, [discardAndBack]);
 
   useEffect(() => {
@@ -359,27 +362,26 @@ export function OrderCreationWizardScreen({
   }, [previewData, setStep, step]);
 
   const openWallet = useCallback(() => {
+    setSheet(null);
     router.push('/(customer)/wallet');
   }, []);
 
   const showCreateError = useCallback((error: ApiStatusError) => {
     if (error.statusCode === 402) {
-      Alert.alert(
-        orderWizardText(orderWizardKeys.insufficientTitle),
-        orderWizardText(orderWizardKeys.insufficientBody),
-        [
-          { text: orderWizardText(orderWizardKeys.keepEditing), style: 'cancel' },
-          { text: orderWizardText(orderWizardKeys.topUpWallet), onPress: openWallet },
-        ],
-      );
+      setSheet({
+        title: orderWizardText(orderWizardKeys.insufficientTitle),
+        body: orderWizardText(orderWizardKeys.insufficientBody),
+        primaryLabel: orderWizardText(orderWizardKeys.topUpWallet),
+        primaryAction: openWallet,
+      });
       return;
     }
 
     if (error.statusCode === 409) {
-      Alert.alert(
-        orderWizardText(orderWizardKeys.slotFullTitle),
-        orderWizardText(orderWizardKeys.slotFullBody),
-      );
+      setSheet({
+        title: orderWizardText(orderWizardKeys.slotFullTitle),
+        body: orderWizardText(orderWizardKeys.slotFullBody),
+      });
       setStep(1);
       return;
     }
@@ -387,21 +389,21 @@ export function OrderCreationWizardScreen({
     if (error.statusCode === 400) {
       const message = error.message.toLowerCase();
       const isShopInactive = message.includes('shop') && message.includes('active');
-      Alert.alert(
-        isShopInactive
+      setSheet({
+        title: isShopInactive
           ? orderWizardText(orderWizardKeys.shopUnavailableTitle)
           : orderWizardText(orderWizardKeys.noActiveSlotTitle),
-        isShopInactive
+        body: isShopInactive
           ? orderWizardText(orderWizardKeys.shopUnavailableBody)
           : orderWizardText(orderWizardKeys.noActiveSlotBody),
-      );
+      });
       return;
     }
 
-    Alert.alert(
-      orderWizardText(orderWizardKeys.genericErrorTitle),
-      orderWizardText(orderWizardKeys.genericErrorBody),
-    );
+    setSheet({
+      title: orderWizardText(orderWizardKeys.genericErrorTitle),
+      body: orderWizardText(orderWizardKeys.genericErrorBody),
+    });
   }, [openWallet, setStep]);
 
   const placeOrder = useCallback(() => {
@@ -428,31 +430,44 @@ export function OrderCreationWizardScreen({
     setPaymentMethod('CASH');
   }, [setPaymentMethod]);
 
+  const totalRowStyle = [
+    styles.totalRow,
+    { backgroundColor: tokens.surface, borderColor: tokens.border },
+  ];
+  const walletBalanceValue = walletBalance.data?.balance ?? 0;
+
   const renderPreviewRow = useCallback<ListRenderItem<PreviewRow>>(({ item }) => (
-    <View style={styles.previewRow}>
+    <View style={[styles.previewRow, { borderBottomColor: tokens.border }]}>
       <View style={styles.previewRowText}>
-        <Text numberOfLines={1} style={styles.previewFileName}>{item.fileName}</Text>
-        <Text style={styles.previewMeta}>
+        <Text numberOfLines={1} variant="body" color="textPrimary" style={styles.semibold}>
+          {item.fileName}
+        </Text>
+        <Text variant="caption" color="textSecondary">
           {orderWizardText(orderWizardKeys.fileSubtotal, {
             name: item.fileName,
             pages: item.pricedFile.resolvedPages,
           })}
         </Text>
       </View>
-      <Text style={styles.previewAmount}>
+      <Text variant="bodySm" color="textPrimary" tabular style={styles.bold}>
         {formatCurrency(item.pricedFile.subtotalPrice)}
       </Text>
     </View>
-  ), []);
+  ), [tokens.border]);
 
   const keyPreviewRow = useCallback((item: PreviewRow) => item.id, []);
 
   if (!shopId || !mode) {
     return (
       <View style={styles.container}>
+        <AmbientBackground />
         <View style={styles.centerState}>
-          <Text style={styles.stateTitle}>{orderWizardText(orderWizardKeys.invalidTitle)}</Text>
-          <Text style={styles.stateText}>{orderWizardText(orderWizardKeys.invalidBody)}</Text>
+          <Text variant="h2" color="textPrimary" align="center">
+            {orderWizardText(orderWizardKeys.invalidTitle)}
+          </Text>
+          <Text variant="bodySm" color="textSecondary" align="center">
+            {orderWizardText(orderWizardKeys.invalidBody)}
+          </Text>
           <Button onPress={discardAndBack} variant="secondary" testID="order-wizard-invalid-back">
             <ButtonText>{orderWizardText(orderWizardKeys.back)}</ButtonText>
           </Button>
@@ -470,14 +485,16 @@ export function OrderCreationWizardScreen({
         : false;
   const walletSelected = paymentMethod === 'WALLET';
   const cashSelected = paymentMethod === 'CASH';
-  const placeOrderDisabled = createInput === null || isCreatePending;
+  const walletDisabled = totalPrice !== null && walletBalanceValue < totalPrice;
+  const placeOrderDisabled = createInput === null || isCreatePending || (walletSelected && walletDisabled);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <AmbientBackground />
+      <View style={[styles.header, { borderBottomColor: tokens.border }]}>
         <View>
-          <Text style={styles.title}>{orderWizardText(orderWizardKeys.title)}</Text>
-          <Text style={styles.progressText} testID="order-wizard-progress">
+          <Text variant="h2" color="textPrimary">{orderWizardText(orderWizardKeys.title)}</Text>
+          <Text variant="bodySm" color="textSecondary" style={styles.semibold} testID="order-wizard-progress">
             {orderWizardText(orderWizardKeys.progress, { step, totalSteps: 4 })}
           </Text>
         </View>
@@ -485,11 +502,24 @@ export function OrderCreationWizardScreen({
           accessibilityLabel={orderWizardText(orderWizardKeys.cancel)}
           accessibilityRole="button"
           onPress={confirmDiscard}
-          style={styles.cancelButton}
+          style={[styles.cancelButton, { borderColor: tokens.border }]}
           testID="order-wizard-cancel"
         >
-          <Text style={styles.cancelText}>{orderWizardText(orderWizardKeys.cancel)}</Text>
+          <Text variant="bodySm" color="primary" style={styles.bold}>
+            {orderWizardText(orderWizardKeys.cancel)}
+          </Text>
         </Pressable>
+      </View>
+      <View style={styles.progressBars} accessibilityLabel="Order progress">
+        {[1, 2, 3, 4].map((item) => (
+          <View
+            key={item}
+            style={[
+              styles.progressBar,
+              { backgroundColor: item <= step ? tokens.primary : tokens.border },
+            ]}
+          />
+        ))}
       </View>
 
       <ScrollView
@@ -498,18 +528,18 @@ export function OrderCreationWizardScreen({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.stepHeader}>
-          <Text style={styles.stepTitle}>{stepTitle(step)}</Text>
-          <Text style={styles.stepBody}>{stepBody(step)}</Text>
+          <Text variant="h1" color="textPrimary">{stepTitle(step)}</Text>
+          <Text variant="body" color="textSecondary">{stepBody(step)}</Text>
         </View>
 
         {step === 1 ? (
-          <View style={styles.section}>
+          <Card style={styles.section}>
             <SlotPicker shopId={shopId} value={slotId} onChange={setSlot} />
-          </View>
+          </Card>
         ) : null}
 
         {step === 2 ? (
-          <View style={styles.section}>
+          <Card style={styles.section}>
             <FilePickerSection
               files={files}
               maxFiles={10}
@@ -517,24 +547,26 @@ export function OrderCreationWizardScreen({
               onChange={updateFile}
               onRemove={removeFile}
             />
-          </View>
+          </Card>
         ) : null}
 
         {step === 3 ? (
-          <View style={styles.section}>
+          <Card style={styles.section}>
             {isPreviewPending ? (
               <View style={styles.stateInline}>
-                <ActivityIndicator color={colors.primary} />
-                <Text style={styles.stateText}>{orderWizardText(orderWizardKeys.previewLoading)}</Text>
+                <ActivityIndicator color={tokens.primary} />
+                <Text variant="bodySm" color="textSecondary" align="center">
+                  {orderWizardText(orderWizardKeys.previewLoading)}
+                </Text>
               </View>
             ) : null}
 
             {previewError ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorTitle}>
+              <View style={[styles.errorBox, { backgroundColor: tokens.surface, borderColor: tokens.error }]}>
+                <Text variant="bodySm" color="error" style={styles.bold}>
                   {orderWizardText(orderWizardKeys.previewErrorTitle)}
                 </Text>
-                <Text style={styles.errorText}>{previewError.message}</Text>
+                <Text variant="bodySm" color="textSecondary">{previewError.message}</Text>
               </View>
             ) : null}
 
@@ -549,35 +581,45 @@ export function OrderCreationWizardScreen({
             ) : null}
 
             {previewData ? (
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{orderWizardText(orderWizardKeys.total)}</Text>
-                <Text style={styles.totalValue}>
+              <View style={totalRowStyle}>
+                <Text variant="body" color="textSecondary" style={styles.semibold}>
+                  {orderWizardText(orderWizardKeys.total)}
+                </Text>
+                <Text variant="h2" color="primary" tabular>
                   {formatCurrency(previewData.totalPrice)}
                 </Text>
               </View>
             ) : null}
-          </View>
+          </Card>
         ) : null}
 
         {step === 4 ? (
-          <View style={styles.section}>
+          <Card style={styles.section}>
             <Pressable
               accessibilityLabel={orderWizardText(orderWizardKeys.wallet)}
               accessibilityRole="button"
+              disabled={walletDisabled}
               onPress={selectWallet}
               style={({ pressed }) => [
                 styles.paymentCard,
-                walletSelected ? styles.paymentCardSelected : null,
+                { backgroundColor: tokens.surface, borderColor: tokens.border },
+                walletSelected ? { borderColor: tokens.primary, borderWidth: 2 } : null,
+                walletDisabled ? styles.disabledPayment : null,
                 pressed ? styles.paymentCardPressed : null,
               ]}
               testID="order-wizard-wallet"
             >
-              <Text style={styles.paymentTitle}>{orderWizardText(orderWizardKeys.wallet)}</Text>
-              <Text style={styles.paymentBody}>
+              <Text variant="h3" color="textPrimary">{orderWizardText(orderWizardKeys.wallet)}</Text>
+              <Text variant="bodySm" color="textSecondary">
                 {orderWizardText(orderWizardKeys.walletBalance, {
-                  amount: formatCurrency(walletBalance.data?.balance ?? 0),
+                  amount: formatCurrency(walletBalanceValue),
                 })}
               </Text>
+              {walletDisabled ? (
+                <Text variant="caption" color="warn">
+                  {orderWizardText(orderWizardKeys.insufficientTitle)}
+                </Text>
+              ) : null}
             </Pressable>
 
             <Pressable
@@ -586,26 +628,29 @@ export function OrderCreationWizardScreen({
               onPress={selectCash}
               style={({ pressed }) => [
                 styles.paymentCard,
-                cashSelected ? styles.paymentCardSelected : null,
+                { backgroundColor: tokens.surface, borderColor: tokens.border },
+                cashSelected ? { borderColor: tokens.primary, borderWidth: 2 } : null,
                 pressed ? styles.paymentCardPressed : null,
               ]}
               testID="order-wizard-cash"
             >
-              <Text style={styles.paymentTitle}>{orderWizardText(orderWizardKeys.cash)}</Text>
-              <Text style={styles.paymentBody}>{orderWizardText(orderWizardKeys.cashBody)}</Text>
+              <Text variant="h3" color="textPrimary">{orderWizardText(orderWizardKeys.cash)}</Text>
+              <Text variant="bodySm" color="textSecondary">{orderWizardText(orderWizardKeys.cashBody)}</Text>
             </Pressable>
 
             {totalPrice !== null ? (
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{orderWizardText(orderWizardKeys.total)}</Text>
-                <Text style={styles.totalValue}>{formatCurrency(totalPrice)}</Text>
+              <View style={totalRowStyle}>
+                <Text variant="body" color="textSecondary" style={styles.semibold}>
+                  {orderWizardText(orderWizardKeys.total)}
+                </Text>
+                <Text variant="h2" color="primary" tabular>{formatCurrency(totalPrice)}</Text>
               </View>
             ) : null}
-          </View>
+          </Card>
         ) : null}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: tokens.surface, borderTopColor: tokens.border }]}>
         <Button
           onPress={goPrevious}
           size="md"
@@ -643,87 +688,77 @@ export function OrderCreationWizardScreen({
           </Button>
         )}
       </View>
+      <Sheet visible={sheet !== null} onClose={() => setSheet(null)}>
+        {sheet ? (
+          <View style={styles.sheetContent}>
+            <Text variant="h2" color="textPrimary">{sheet.title}</Text>
+            <Text variant="body" color="textSecondary">{sheet.body}</Text>
+            <View style={styles.sheetActions}>
+              <Button variant="secondary" onPress={() => setSheet(null)}>
+                <ButtonText>{orderWizardText(orderWizardKeys.keepEditing)}</ButtonText>
+              </Button>
+              {sheet.primaryLabel ? (
+                <Button variant={sheet.danger ? 'danger' : 'primary'} onPress={sheet.primaryAction}>
+                  <ButtonText>{sheet.primaryLabel}</ButtonText>
+                </Button>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+      </Sheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  bold: { fontWeight: '700' },
+  semibold: { fontWeight: '600' },
   container: {
-    backgroundColor: colors.background,
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    borderBottomColor: colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
+  progressBars: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
-  progressText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    fontWeight: '600',
+  progressBar: {
+    borderRadius: radii.full,
+    flex: 1,
+    height: 5,
   },
   cancelButton: {
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  cancelText: {
-    ...typography.bodySm,
-    color: colors.primary,
-    fontWeight: '700',
-  },
   scrollContent: {
     gap: spacing.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     paddingBottom: spacing['3xl'],
   },
   stepHeader: {
     gap: spacing.xs,
   },
-  stepTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
-  stepBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
   section: {
-    backgroundColor: colors.glassBg,
-    borderColor: colors.border,
-    borderCurve: 'continuous',
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
     gap: spacing.lg,
-    padding: spacing.lg,
   },
   centerState: {
     alignItems: 'center',
     flex: 1,
     gap: spacing.md,
     justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  stateTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  stateText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    padding: spacing.lg,
   },
   stateInline: {
     alignItems: 'center',
@@ -731,26 +766,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   errorBox: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.error,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.md,
   },
-  errorTitle: {
-    ...typography.bodySm,
-    color: colors.error,
-    fontWeight: '700',
-  },
-  errorText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-  },
   previewRow: {
     alignItems: 'center',
-    borderBottomColor: colors.border,
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -761,67 +784,31 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  previewFileName: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  previewMeta: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  previewAmount: {
-    ...typography.bodySm,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
   totalRow: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
+    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: spacing.lg,
   },
-  totalLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  totalValue: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
   paymentCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.borderLight,
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.lg,
-  },
-  paymentCardSelected: {
-    borderColor: colors.primary,
-    borderWidth: 2,
   },
   paymentCardPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.99 }],
   },
-  paymentTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  paymentBody: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
+  disabledPayment: {
+    opacity: 0.52,
   },
   footer: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -829,5 +816,13 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
+  },
+  sheetContent: {
+    gap: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  sheetActions: {
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
 });

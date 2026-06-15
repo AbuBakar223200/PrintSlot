@@ -127,4 +127,23 @@ describe('orderService', () => {
     expect(JSON.parse((mockApiFetch.mock.calls[0][1] as RequestInit).body as string))
       .not.toHaveProperty('totalPrice');
   });
+
+  it('getOrder GETs /orders/:id', async () => {
+    mockApiFetch.mockResolvedValueOnce(order);
+
+    await expect(orderService.getOrder('order-1')).resolves.toEqual(order);
+
+    expect(mockApiFetch).toHaveBeenCalledWith('/orders/order-1');
+  });
+
+  it('cancelOrder PATCHes /orders/:id/cancel', async () => {
+    const cancelled = { ...order, status: OrderStatus.CANCELLED };
+    mockApiFetch.mockResolvedValueOnce(cancelled);
+
+    await expect(orderService.cancelOrder('order-1')).resolves.toEqual(cancelled);
+
+    expect(mockApiFetch).toHaveBeenCalledWith('/orders/order-1/cancel', {
+      method: 'PATCH',
+    });
+  });
 });

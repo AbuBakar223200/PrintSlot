@@ -1,33 +1,33 @@
 import React, { useState } from 'react';
 import {
-  View,
-  TextInput,
-  Text,
-  StyleSheet,
   Pressable,
+  StyleSheet,
+  TextInput,
+  View,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '@/config/theme';
+import { useThemeTokens } from '@/theme';
+import { Text } from '@/components/ui/Text';
+import { fontFamily } from '@/theme/fonts';
+import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 
 export interface InputProps extends TextInputProps {
-  /** Label displayed above the input */
+  /** Label displayed above the field. */
   label?: string;
-  /** Error message — turns border red */
+  /** Error message — turns the border red and shows below. */
   error?: string;
-  /** Icon component rendered on the left */
+  /** Element rendered inside on the left (e.g. a lucide icon). */
   leftIcon?: React.ReactNode;
-  /** Icon component rendered on the right (e.g. password toggle) */
+  /** Element rendered inside on the right (e.g. a password toggle). */
   rightIcon?: React.ReactNode;
-  /** Called when right icon is pressed */
   onRightIconPress?: () => void;
-  /** Container style override */
   containerStyle?: ViewStyle;
 }
 
 /**
- * Styled text input with label, error state, and icon support.
- * Part of the PrintSlot design system.
+ * F5 — `Input` (retuned to indigo tokens). Label/error via the `Text` primitive,
+ * indigo focus border, token colors throughout.
  */
 export function Input({
   label,
@@ -41,98 +41,73 @@ export function Input({
   onBlur,
   ...props
 }: InputProps) {
-  const [isFocused, setIsFocused] = useState(false);
+  const tokens = useThemeTokens();
+  const language = useSettingsStore((s) => s.language);
+  const [focused, setFocused] = useState(false);
 
-  const borderColor = error
-    ? colors.error
-    : isFocused
-      ? colors.borderFocus
-      : colors.border;
+  const borderColor = error ? tokens.error : focused ? tokens.primary : tokens.border;
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
+      {label ? (
+        <Text variant="label" color="textSecondary" style={styles.label}>
+          {label}
+        </Text>
+      ) : null}
 
-      <View style={[styles.inputContainer, { borderColor }]}>
+      <View style={[styles.inputRow, { borderColor, backgroundColor: tokens.surface }]}>
         {leftIcon ? <View style={styles.iconLeft}>{leftIcon}</View> : null}
-
         <TextInput
           style={[
             styles.input,
-            leftIcon ? styles.inputWithLeftIcon : null,
-            rightIcon ? styles.inputWithRightIcon : null,
+            { color: tokens.textPrimary, fontFamily: fontFamily('regular', language) },
+            leftIcon ? styles.padLeft : null,
+            rightIcon ? styles.padRight : null,
             style,
           ]}
-          placeholderTextColor={colors.textTertiary}
-          selectionColor={colors.primary}
+          placeholderTextColor={tokens.textMuted}
+          selectionColor={tokens.primary}
           onFocus={(e) => {
-            setIsFocused(true);
+            setFocused(true);
             onFocus?.(e);
           }}
           onBlur={(e) => {
-            setIsFocused(false);
+            setFocused(false);
             onBlur?.(e);
           }}
           {...props}
         />
-
         {rightIcon ? (
-          <Pressable
-            onPress={onRightIconPress}
-            style={styles.iconRight}
-            hitSlop={8}
-          >
+          <Pressable onPress={onRightIconPress} style={styles.iconRight} hitSlop={8}>
             {rightIcon}
           </Pressable>
         ) : null}
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <Text variant="caption" style={[styles.error, { color: tokens.error }]}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: spacing.xs,
-  },
-  label: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    marginLeft: spacing.xs,
-  },
-  inputContainer: {
+  container: { gap: 6 },
+  label: { marginLeft: 2 },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
     borderWidth: 1.5,
-    borderRadius: borderRadius.md,
+    borderRadius: 14,
     borderCurve: 'continuous',
-    minHeight: 52,
+    minHeight: 50,
   },
-  input: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  inputWithLeftIcon: {
-    paddingLeft: spacing.xs,
-  },
-  inputWithRightIcon: {
-    paddingRight: spacing.xs,
-  },
-  iconLeft: {
-    paddingLeft: spacing.lg,
-  },
-  iconRight: {
-    paddingRight: spacing.lg,
-  },
-  error: {
-    ...typography.caption,
-    color: colors.error,
-    marginLeft: spacing.xs,
-  },
+  input: { flex: 1, fontSize: 16, paddingHorizontal: 14, paddingVertical: 12 },
+  padLeft: { paddingLeft: 6 },
+  padRight: { paddingRight: 6 },
+  iconLeft: { paddingLeft: 14 },
+  iconRight: { paddingRight: 14 },
+  error: { marginLeft: 2 },
 });

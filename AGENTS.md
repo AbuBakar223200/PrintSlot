@@ -6,6 +6,10 @@
 
 > **Git:** Always cut branches from `origin/development`, not `main`. PRs target `development`. Branch format: `ihm/<type>/<desc>`. See `CLAUDE.md` for full workflow.
 
+> **🎨 UI Ground Truth (always).** The two authoritative references for any mobile UI are **`docs/09-ui-ux-design-spec.md`** (design system + per-screen spec) and **`prototype/`** (the interactive high-fidelity prototype — the visual source of truth). Read BOTH before building or changing any screen/component. **Precedence on conflict:** the prototype + spec define the *visual/interaction design*; the PRD / CONTEXT / api-contract define *behavior & feature scope* — if they disagree, **PRD wins for behavior, prototype wins for look** (the prototype's customer wallet "Top Up" button is a demo artifact the PRD forbids — keep it out). Never hand-roll UI that diverges from these.
+
+> **Commit cadence.** On a multi-step UI task or migration, **commit incrementally** on your feature branch as each logical unit lands (a token set, a primitive, a screen) — don't batch everything into one giant commit. Use clear messages and end with the `Co-Authored-By` trailer per `CLAUDE.md`.
+
 ---
 
 ## Table of Contents

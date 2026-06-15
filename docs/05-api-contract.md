@@ -159,6 +159,7 @@
 |---|---|---|---|---|---|
 | GET | `/shops/:id/analytics` | Yes | SHOP_OWNER (own shop) | `?date=YYYY-MM-DD` | `{ totalOrders, revenue, byStatus: { QUEUED, PROCESSING, READY, COLLECTED, CANCELLED }, avgProcessingMins }` |
 | GET | `/admin/analytics` | Yes | PLATFORM_ADMIN | — | `{ totalShops, totalOrders, revenuePerShop: [{ shopId, name, revenue }], pendingApprovals }` |
+| GET | `/admin/shops` | Yes | PLATFORM_ADMIN | `?status?` | `{ items: Shop[], total, page, limit }` — **all** shops for the approval queue (the public `GET /shops` is ACTIVE-only). |
 | GET | `/admin/config` | Yes | PLATFORM_ADMIN | — | `AppConfig[]` |
 | PATCH | `/admin/config/:key` | Yes | PLATFORM_ADMIN | `{ value: string }` | `AppConfig` |
 

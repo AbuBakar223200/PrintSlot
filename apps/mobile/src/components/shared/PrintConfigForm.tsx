@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Pressable,
   Switch,
 } from 'react-native';
 import { ColorMode, PaperSize, Orientation, PrintConfig } from '@printslot/shared';
-import { colors, spacing, borderRadius, typography } from '@/config/theme';
-import { Input } from '@/components/ui/Input';
+import { Input, SegmentedControl, Text } from '@/components/ui';
+import { radii, spacing, useThemeTokens } from '@/theme';
 import { parsePageRange } from '../../utils/pageRange';
 
 export interface PrintConfigFormProps {
@@ -43,6 +42,7 @@ export function PrintConfigForm({
   onChange,
   onValidChange,
 }: PrintConfigFormProps) {
+  const tokens = useThemeTokens();
   const [errorStr, setErrorStr] = useState<string | undefined>(undefined);
 
   const totalPages = detectedPages !== null ? detectedPages : manualPages;
@@ -92,127 +92,50 @@ export function PrintConfigForm({
     onChange({ ...value, pageRange: text === '' ? null : text });
   };
 
+  const surfaceCard = { backgroundColor: tokens.surface, borderColor: tokens.border };
+
   return (
-    <View style={styles.container}>
-      {/* 1. Color Mode Option */}
+    <View style={[styles.container, surfaceCard]}>
       <View style={styles.formGroup}>
-        <Text style={styles.label}>{t.colorMode}</Text>
-        <View style={styles.segmentedContainer}>
-          <Pressable
-            testID="color-mode-COLOR"
-            accessibilityLabel={`Set Color Mode to ${t.color}`}
-            onPress={() => handleColorModeChange(ColorMode.COLOR)}
-            style={[
-              styles.segment,
-              value.colorMode === ColorMode.COLOR ? styles.segmentActive : null,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                value.colorMode === ColorMode.COLOR ? styles.segmentTextActive : null,
-              ]}
-            >
-              {t.color}
-            </Text>
-          </Pressable>
-          <Pressable
-            testID="color-mode-BW"
-            accessibilityLabel={`Set Color Mode to ${t.bw}`}
-            onPress={() => handleColorModeChange(ColorMode.BW)}
-            style={[
-              styles.segment,
-              value.colorMode === ColorMode.BW ? styles.segmentActive : null,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                value.colorMode === ColorMode.BW ? styles.segmentTextActive : null,
-              ]}
-            >
-              {t.bw}
-            </Text>
-          </Pressable>
-        </View>
+        <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.colorMode}</Text>
+        <SegmentedControl
+          getOptionTestID={(option) => `color-mode-${option}`}
+          onChange={handleColorModeChange}
+          options={[
+            { value: ColorMode.COLOR, label: t.color },
+            { value: ColorMode.BW, label: t.bw },
+          ]}
+          value={value.colorMode}
+        />
       </View>
 
-      {/* 2. Paper Size Option */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>{t.paperSize}</Text>
-        <View style={styles.segmentedContainer}>
-          {Object.values(PaperSize).map((size) => (
-            <Pressable
-              key={size}
-              testID={`paper-size-${size}`}
-              accessibilityLabel={`Set Paper Size to ${size}`}
-              onPress={() => handlePaperSizeChange(size)}
-              style={[
-                styles.segment,
-                value.paperSize === size ? styles.segmentActive : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.segmentText,
-                  value.paperSize === size ? styles.segmentTextActive : null,
-                ]}
-              >
-                {size}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.paperSize}</Text>
+        <SegmentedControl
+          getOptionTestID={(option) => `paper-size-${option}`}
+          onChange={handlePaperSizeChange}
+          options={Object.values(PaperSize).map((size) => ({ value: size, label: size }))}
+          value={value.paperSize}
+        />
       </View>
 
-      {/* 3. Orientation Option */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>{t.orientation}</Text>
-        <View style={styles.segmentedContainer}>
-          <Pressable
-            testID="orientation-PORTRAIT"
-            accessibilityLabel={`Set Orientation to ${t.portrait}`}
-            onPress={() => handleOrientationChange(Orientation.PORTRAIT)}
-            style={[
-              styles.segment,
-              value.orientation === Orientation.PORTRAIT ? styles.segmentActive : null,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                value.orientation === Orientation.PORTRAIT ? styles.segmentTextActive : null,
-              ]}
-            >
-              {t.portrait}
-            </Text>
-          </Pressable>
-          <Pressable
-            testID="orientation-LANDSCAPE"
-            accessibilityLabel={`Set Orientation to ${t.landscape}`}
-            onPress={() => handleOrientationChange(Orientation.LANDSCAPE)}
-            style={[
-              styles.segment,
-              value.orientation === Orientation.LANDSCAPE ? styles.segmentActive : null,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                value.orientation === Orientation.LANDSCAPE ? styles.segmentTextActive : null,
-              ]}
-            >
-              {t.landscape}
-            </Text>
-          </Pressable>
-        </View>
+        <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.orientation}</Text>
+        <SegmentedControl
+          getOptionTestID={(option) => `orientation-${option}`}
+          onChange={handleOrientationChange}
+          options={[
+            { value: Orientation.PORTRAIT, label: t.portrait },
+            { value: Orientation.LANDSCAPE, label: t.landscape },
+          ]}
+          value={value.orientation}
+        />
       </View>
 
       <View style={styles.row}>
-        {/* 4. Copies Stepper Option */}
         <View style={[styles.formGroup, { flex: 1 }]}>
-          <Text style={styles.label}>{t.copies}</Text>
-          <View style={styles.stepperContainer}>
+          <Text variant="bodySm" color="textSecondary" style={styles.label}>{t.copies}</Text>
+          <View style={[styles.stepperContainer, surfaceCard]}>
             <Pressable
               testID="copies-decrement"
               accessibilityLabel="Decrement copies"
@@ -223,10 +146,10 @@ export function PrintConfigForm({
                 value.copies <= 1 ? styles.stepperButtonDisabled : null,
               ]}
             >
-              <Text style={styles.stepperButtonText}>−</Text>
+              <Text variant="h3" color="textPrimary">−</Text>
             </Pressable>
             <View style={styles.stepperValueContainer}>
-              <Text testID="copies-value" style={styles.stepperValueText}>
+              <Text testID="copies-value" variant="body" color="textPrimary" tabular style={styles.bold}>
                 {value.copies}
               </Text>
             </View>
@@ -240,26 +163,24 @@ export function PrintConfigForm({
                 value.copies >= 100 ? styles.stepperButtonDisabled : null,
               ]}
             >
-              <Text style={styles.stepperButtonText}>+</Text>
+              <Text variant="h3" color="textPrimary">+</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* 5. Duplex Option */}
-        <View style={styles.duplexContainer}>
-          <Text style={[styles.label, { marginBottom: 0 }]}>{t.doubleSided}</Text>
+        <View style={[styles.duplexContainer, surfaceCard]}>
+          <Text variant="bodySm" color="textSecondary" style={styles.semibold}>{t.doubleSided}</Text>
           <Switch
             testID="duplex-switch"
             accessibilityLabel="Toggle double-sided printing"
             value={value.duplex}
             onValueChange={handleDuplexChange}
-            trackColor={{ false: colors.borderLight, true: colors.primary }}
-            thumbColor={colors.textPrimary}
+            trackColor={{ false: tokens.border, true: tokens.primary }}
+            thumbColor={tokens.onPrimary}
           />
         </View>
       </View>
 
-      {/* 6. Page Range Option */}
       <View style={styles.formGroup}>
         <Input
           testID="page-range-input"
@@ -272,13 +193,12 @@ export function PrintConfigForm({
           autoCorrect={false}
           error={errorStr}
         />
-        {/* Info or Hint Text without leaking raw falsy logic */}
         {totalPages !== null && totalPages > 0 ? (
-          <Text style={styles.helperText}>
+          <Text variant="caption" color="textMuted" style={styles.helperText}>
             {totalPages} {t.pagesDetected}
           </Text>
         ) : (
-          <Text style={styles.helperText}>{t.formatHint}</Text>
+          <Text variant="caption" color="textMuted" style={styles.helperText}>{t.formatHint}</Text>
         )}
       </View>
     </View>
@@ -286,13 +206,13 @@ export function PrintConfigForm({
 }
 
 const styles = StyleSheet.create({
+  bold: { fontWeight: '700' },
+  semibold: { fontWeight: '600' },
   container: {
     gap: spacing.lg,
-    backgroundColor: colors.glassBg,
-    borderRadius: borderRadius.lg,
+    borderRadius: radii.card,
     borderCurve: 'continuous',
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.lg,
   },
   formGroup: {
@@ -304,46 +224,16 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   label: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
     fontWeight: '600',
     marginLeft: spacing.xs,
     marginBottom: spacing.xs,
   },
-  segmentedContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.md,
-    borderCurve: 'continuous',
-    padding: spacing.xs,
-    gap: spacing.xs,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.sm,
-    borderCurve: 'continuous',
-  },
-  segmentActive: {
-    backgroundColor: colors.primary,
-  },
-  segmentText: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  segmentTextActive: {
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderCurve: 'continuous',
+    borderWidth: 1,
     padding: spacing.xs,
   },
   stepperButton: {
@@ -351,34 +241,23 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.borderLight,
-    borderRadius: borderRadius.sm,
+    borderRadius: radii.sm,
     borderCurve: 'continuous',
   },
   stepperButtonDisabled: {
     opacity: 0.4,
-  },
-  stepperButtonText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
   },
   stepperValueContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperValueText: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
   duplexContainer: {
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.md,
+    borderRadius: radii.control,
     borderCurve: 'continuous',
+    borderWidth: 1,
     padding: spacing.md,
     flexDirection: 'row',
     flex: 1,
@@ -386,8 +265,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   helperText: {
-    ...typography.caption,
-    color: colors.textTertiary,
     marginLeft: spacing.xs,
     marginTop: spacing.xs,
   },

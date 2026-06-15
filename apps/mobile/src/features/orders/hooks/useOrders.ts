@@ -1,6 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateOrderInput, PreviewPriceInput } from '@printslot/shared';
 import { orderService } from '@/features/orders/services/orderService';
+
+export function useOrders() {
+  return useQuery({
+    queryKey: ['orders'],
+    queryFn: () => orderService.listOrders(),
+  });
+}
 
 export function usePreviewPrice() {
   return useMutation({

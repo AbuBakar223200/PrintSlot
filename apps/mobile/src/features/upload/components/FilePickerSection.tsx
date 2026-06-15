@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { borderRadius, colors, spacing, typography } from '@/config/theme';
+import { Button, ButtonText, Text } from '@/components/ui';
+import { radii, spacing, useThemeTokens } from '@/theme';
 import { FilePickerCard } from './FilePickerCard';
 import {
   ACCEPTED_UPLOAD_MIME_TYPES,
@@ -87,6 +88,7 @@ export function FilePickerSection({
   onRemove,
   maxFiles = 10,
 }: FilePickerSectionProps) {
+  const tokens = useThemeTokens();
   const { uploadFile } = useUploadFile();
   const isAtMax = files.length >= maxFiles;
 
@@ -240,23 +242,18 @@ export function FilePickerSection({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>
+        <Text variant="h3" color="textPrimary" style={styles.title}>
           {uploadText(uploadKeys.filesCount, { current: files.length, max: maxFiles })}
         </Text>
-        <Pressable
-          accessibilityLabel={uploadText(uploadKeys.addFile)}
-          accessibilityRole="button"
+        <Button
+          size="sm"
           disabled={isAtMax}
           onPress={openPickerMenu}
-          style={({ pressed }) => [
-            styles.addButton,
-            isAtMax ? styles.addButtonDisabled : null,
-            pressed && !isAtMax ? styles.addButtonPressed : null,
-          ]}
+          accessibilityLabel={uploadText(uploadKeys.addFile)}
           testID="file-picker-add"
         >
-          <Text style={styles.addButtonText}>{uploadText(uploadKeys.addFile)}</Text>
-        </Pressable>
+          <ButtonText>{uploadText(uploadKeys.addFile)}</ButtonText>
+        </Button>
       </View>
 
       <FlashList
@@ -264,7 +261,18 @@ export function FilePickerSection({
         data={files}
         estimatedItemSize={280}
         keyExtractor={keyExtractor}
-        ListEmptyComponent={<Text style={styles.emptyText}>{uploadText(uploadKeys.empty)}</Text>}
+        ListEmptyComponent={
+          <View
+            style={[
+              styles.emptyBox,
+              { backgroundColor: tokens.surface, borderColor: tokens.border },
+            ]}
+          >
+            <Text variant="bodySm" color="textSecondary">
+              {uploadText(uploadKeys.empty)}
+            </Text>
+          </View>
+        }
         renderItem={renderItem}
         scrollEnabled={false}
         style={styles.list}
@@ -284,30 +292,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    ...typography.h3,
-    color: colors.textPrimary,
     flex: 1,
-  },
-  addButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    minHeight: 44,
-    paddingHorizontal: spacing.lg,
-  },
-  addButtonDisabled: {
-    opacity: 0.45,
-  },
-  addButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.98 }],
-  },
-  addButtonText: {
-    ...typography.bodySm,
-    color: colors.textInverse,
-    fontWeight: '700',
   },
   list: {
     minHeight: 72,
@@ -315,14 +300,10 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: spacing.xs,
   },
-  emptyText: {
-    ...typography.bodySm,
-    backgroundColor: colors.card,
-    borderColor: colors.border,
+  emptyBox: {
     borderCurve: 'continuous',
-    borderRadius: borderRadius.md,
+    borderRadius: radii.card,
     borderWidth: 1,
-    color: colors.textSecondary,
     padding: spacing.lg,
   },
 });
