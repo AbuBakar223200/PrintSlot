@@ -185,43 +185,40 @@ async function main() {
   });
   console.log('✓ Test Staff User row upserted');
 
-  // ── 8. Create Slot Template (09:00–17:00 all-day window)
+  // ── 8. All-day slot template (00:00–23:59) so "Print Now" has an active slot
+  //       at ANY time of day (getActiveSlot needs startTime <= now < endTime).
   let template = await prisma.slotTemplate.findFirst({
-    where: { startTime: '09:00', endTime: '23:59', deletedAt: null },
+    where: { startTime: '00:00', endTime: '23:59', deletedAt: null },
   });
   if (!template) {
     template = await prisma.slotTemplate.create({
-      data: { startTime: '09:00', endTime: '23:59' },
+      data: { startTime: '00:00', endTime: '23:59' },
     });
-    console.log(`✓ Slot Template created (id=${template.id})`);
+    console.log(`✓ All-day slot template created (id=${template.id})`);
   } else {
-    console.log(`✓ Slot Template already exists (id=${template.id})`);
+    console.log(`✓ All-day slot template already exists (id=${template.id})`);
   }
 
-  // ── 9. Create open ShopSlot for today (BST)
+  // ── 9. Open all-day ShopSlot for TODAY + the next 3 days (BST). Slots are
+  //       date-specific, so seeding several days keeps Print Now + Schedule
+  //       working without re-seeding daily. `slot` = today's (QUEUE assignment).
   const bstOffsetMs = 6 * 60 * 60 * 1000;
   const bstNow = new Date(Date.now() + bstOffsetMs);
   const todayStr = bstNow.toISOString().slice(0, 10);
   const todayDate = new Date(`${todayStr}T00:00:00.000Z`);
+  const DAY_MS = 24 * 60 * 60 * 1000;
 
-  const slot = await prisma.shopSlot.upsert({
-    where: {
-      shopId_templateId_date: {
-        shopId: shop.id,
-        templateId: template.id,
-        date: todayDate,
-      },
-    },
-    create: {
-      shopId: shop.id,
-      templateId: template.id,
-      date: todayDate,
-      isOpen: true,
-      maxOrders: 50,
-    },
-    update: { isOpen: true },
-  });
-  console.log(`✓ Today's ShopSlot upserted (id=${slot.id}, date=${todayStr})`);
+  let slot: { id: string } | null = null;
+  for (let off = 0; off <= 3; off++) {
+    const d = new Date(todayDate.getTime() + off * DAY_MS);
+    const ss = await prisma.shopSlot.upsert({
+      where: { shopId_templateId_date: { shopId: shop.id, templateId: template.id, date: d } },
+      create: { shopId: shop.id, templateId: template.id, date: d, isOpen: true, maxOrders: 50 },
+      update: { isOpen: true, maxOrders: 50 },
+    });
+    if (off === 0) slot = ss;
+  }
+  console.log(`✓ All-day ShopSlots upserted (today..+3, today=${todayStr})`);
 
   // ── 10. Top up customer wallet with 500 BDT for testing
   const existingTopup = await prisma.walletTransaction.findFirst({
@@ -314,14 +311,19 @@ async function main() {
   for (const w of windows) {
     let tpl = await prisma.slotTemplate.findFirst({ where: { startTime: w.s, endTime: w.e, deletedAt: null } });
     if (!tpl) tpl = await prisma.slotTemplate.create({ data: { startTime: w.s, endTime: w.e } });
-    const ss = await prisma.shopSlot.upsert({
-      where: { shopId_templateId_date: { shopId: shop.id, templateId: tpl.id, date: todayDate } },
-      create: { shopId: shop.id, templateId: tpl.id, date: todayDate, isOpen: w.open, maxOrders: w.max, currentCount: w.used },
-      update: { isOpen: w.open, maxOrders: w.max, currentCount: w.used },
-    });
-    slotByWindow[w.s] = ss.id;
+    // today (tracked for SLOT-order assignment) + next 3 days (so Schedule Pickup
+    // date chips have slots). Today keeps its usage counts; future days start empty.
+    for (let off = 0; off <= 3; off++) {
+      const d = new Date(todayDate.getTime() + off * DAY_MS);
+      const ss = await prisma.shopSlot.upsert({
+        where: { shopId_templateId_date: { shopId: shop.id, templateId: tpl.id, date: d } },
+        create: { shopId: shop.id, templateId: tpl.id, date: d, isOpen: w.open, maxOrders: w.max, currentCount: off === 0 ? w.used : 0 },
+        update: { isOpen: w.open, maxOrders: w.max, currentCount: off === 0 ? w.used : 0 },
+      });
+      if (off === 0) slotByWindow[w.s] = ss.id;
+    }
   }
-  console.log('✓ Slot templates + today ShopSlots seeded (some full/closed)');
+  console.log('✓ Window ShopSlots seeded (today..+3, some full/closed)');
 
   // Reset seed-range demo orders / txns / notifications (idempotent rebuild).
   const seedCustomerIds = [customerId, tania.id, sajid.id];
@@ -330,7 +332,7 @@ async function main() {
   await prisma.order.deleteMany({ where: { orderNumber: { startsWith: 'PS-9' } } });
 
   const minsAgo = (m: number) => new Date(Date.now() - m * 60000);
-  const queueSlotId = slot.id;            // today's all-day open slot (QUEUE assignment)
+  const queueSlotId = slot!.id;           // today's all-day open slot (QUEUE assignment)
   const slot1000 = slotByWindow['10:00'];
   const slot1030 = slotByWindow['10:30'];
 
@@ -403,7 +405,7 @@ async function main() {
   console.log(`Staff:    ${testStaffEmail} / ${testStaffPassword}`);
   console.log(`Admin:    ${adminEmail} / ${adminPassword}`);
   console.log(`Shop ID:  ${shop.id}`);
-  console.log(`Slot ID:  ${slot.id}`);
+  console.log(`Slot ID:  ${slot?.id}`);
 }
 
 main()
