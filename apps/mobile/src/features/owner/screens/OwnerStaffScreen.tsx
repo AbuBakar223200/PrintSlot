@@ -42,7 +42,7 @@ export default function OwnerStaffScreen() {
   const removeStaff = useRemoveStaff();
   const staff = data ?? [];
 
-  const [promoteId, setPromoteId] = useState('');
+  const [email, setEmail] = useState('');
   const [pendingRemoval, setPendingRemoval] = useState<User | null>(null);
 
   const openProfile = useCallback(() => {
@@ -50,19 +50,19 @@ export default function OwnerStaffScreen() {
   }, []);
 
   const onAdd = useCallback(() => {
-    const userId = promoteId.trim();
-    if (!shopId || !userId) return;
+    const trimmedEmail = email.trim();
+    if (!shopId || !trimmedEmail) return;
     addStaff.mutate(
-      { shopId, userId },
+      { shopId, email: trimmedEmail },
       {
         onSuccess: () => {
-          setPromoteId('');
+          setEmail('');
           toast(t('toast.staffAdded'), { tone: 'success', icon: UserPlus });
         },
         onError: (error) => toast(error.message, { tone: 'error' }),
       },
     );
-  }, [addStaff, promoteId, shopId, t]);
+  }, [addStaff, email, shopId, t]);
 
   const onConfirmRemove = useCallback(() => {
     if (!shopId || !pendingRemoval) return;
@@ -103,16 +103,18 @@ export default function OwnerStaffScreen() {
         <Card style={styles.promoteCard}>
           <Input
             label={t('owner.promote')}
-            placeholder={t('owner.userIdHint')}
-            value={promoteId}
+            placeholder={t('owner.emailHint')}
+            value={email}
             autoCapitalize="none"
-            onChangeText={setPromoteId}
+            autoCorrect={false}
+            keyboardType="email-address"
+            onChangeText={setEmail}
             testID="owner-promote-input"
           />
           <Button
             size="sm"
             onPress={onAdd}
-            disabled={!promoteId.trim()}
+            disabled={!email.trim()}
             isLoading={addStaff.isPending}
             testID="owner-add-staff"
           >

@@ -3,6 +3,7 @@ import type { Shop } from '@printslot/shared';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import {
   ownerShopService,
+  type CreateShopInput,
   type UpdateShopInput,
 } from '@/features/owner/services/ownerShopService';
 
@@ -25,6 +26,20 @@ export function useOwnerShop() {
     queryFn: () => ownerShopService.getMyShop(ownerId as string),
     enabled: !!ownerId,
     staleTime: 30_000,
+  });
+}
+
+/** Create and request a new shop (PENDING admin approval), then prime the cache. */
+export function useCreateShop() {
+  const queryClient = useQueryClient();
+  const ownerId = useOwnerId();
+
+  return useMutation<Shop, Error, CreateShopInput>({
+    mutationFn: (input) => ownerShopService.createShop(input),
+    onSuccess: (shop) => {
+      queryClient.setQueryData(ownerShopKey(ownerId), shop);
+      void queryClient.invalidateQueries({ queryKey: ownerShopKey(ownerId) });
+    },
   });
 }
 

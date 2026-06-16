@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AssignStaffSchema = z.object({
-  userId: z.string().uuid('Invalid user ID format'),
+  email: z.string().trim().email('Invalid email format'),
 }).strict();
 
 export type AssignStaffDto = z.infer<typeof AssignStaffSchema>;

@@ -75,21 +75,30 @@ describe('StaffController', () => {
 
   // ── POST /shops/:id/staff ─────────────────────────────────────────────────
 
-  it('POST /shops/:id/staff with SHOP_OWNER assigns staff', async () => {
+  it('POST /shops/:id/staff with SHOP_OWNER assigns staff by email', async () => {
     app = await createApp(Role.SHOP_OWNER);
     mockStaffService.assignStaff.mockResolvedValueOnce(mockStaffResult);
 
     const res = await request(app.getHttpServer())
       .post('/shops/shop-1/staff')
-      .send({ userId: '11111111-1111-4111-8111-111111111111' })
+      .send({ email: 'customer@test.com' })
       .expect(201);
 
     expect(res.body.data.role).toBe('STAFF');
     expect(mockStaffService.assignStaff).toHaveBeenCalledWith(
       'shop-1',
-      '11111111-1111-4111-8111-111111111111',
+      'customer@test.com',
       'owner-1',
     );
+  });
+
+  it('POST /shops/:id/staff with a malformed email → 400', async () => {
+    app = await createApp(Role.SHOP_OWNER);
+
+    await request(app.getHttpServer())
+      .post('/shops/shop-1/staff')
+      .send({ email: 'not-an-email' })
+      .expect(400);
   });
 
   it('POST /shops/:id/staff without SHOP_OWNER role → 403', async () => {
@@ -97,7 +106,7 @@ describe('StaffController', () => {
 
     await request(app.getHttpServer())
       .post('/shops/shop-1/staff')
-      .send({ userId: '11111111-1111-4111-8111-111111111111' })
+      .send({ email: 'customer@test.com' })
       .expect(403);
   });
 
@@ -106,7 +115,7 @@ describe('StaffController', () => {
 
     await request(app.getHttpServer())
       .post('/shops/shop-1/staff')
-      .send({ userId: '11111111-1111-4111-8111-111111111111' })
+      .send({ email: 'customer@test.com' })
       .expect(401);
   });
 
@@ -139,7 +148,7 @@ describe('StaffController', () => {
 
   // ── GET /shops/:id/staff ──────────────────────────────────────────────────
 
-  it('GET /shops/:id/staff response wrapped in { data }', async () => {
+  it('GET /shops/:id/staff returns User[] in the response envelope', async () => {
     app = await createApp(Role.SHOP_OWNER);
     mockStaffService.listStaff.mockResolvedValueOnce([mockStaffResult]);
 
@@ -147,7 +156,7 @@ describe('StaffController', () => {
       .get('/shops/shop-1/staff')
       .expect(200);
 
-    expect(res.body.data).toEqual({ data: [mockStaffResult] });
+    expect(res.body.data).toEqual([mockStaffResult]);
     expect(mockStaffService.listStaff).toHaveBeenCalledWith('shop-1', 'owner-1');
   });
 

@@ -7,11 +7,11 @@ export const ownerStaffService = {
     return apiFetch<User[]>(`/shops/${shopId}/staff`);
   },
 
-  /** Promote a customer to staff at this shop (`POST /shops/:id/staff`). */
-  addStaff(shopId: string, userId: string): Promise<User> {
+  /** Promote a customer (by email) to staff at this shop (`POST /shops/:id/staff`). */
+  addStaff(shopId: string, email: string): Promise<User> {
     return apiFetch<User>(`/shops/${shopId}/staff`, {
       method: 'POST',
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ email }),
     });
   },
 

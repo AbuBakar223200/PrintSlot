@@ -21,8 +21,8 @@ export function useOwnerStaff(shopId: string | null) {
 export function useAddStaff() {
   const queryClient = useQueryClient();
 
-  return useMutation<User, Error, { shopId: string; userId: string }>({
-    mutationFn: ({ shopId, userId }) => ownerStaffService.addStaff(shopId, userId),
+  return useMutation<User, Error, { shopId: string; email: string }>({
+    mutationFn: ({ shopId, email }) => ownerStaffService.addStaff(shopId, email),
     onSuccess: (_user, { shopId }) => {
       void queryClient.invalidateQueries({ queryKey: ownerStaffKey(shopId) });
     },

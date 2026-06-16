@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BadgeCheck, Check, Clock, RotateCcw, XCircle } from 'lucide-react-native';
+import { BadgeCheck, Check, Clock, RotateCcw, Store, XCircle } from 'lucide-react-native';
 import { ShopStatus } from '@printslot/shared';
 import {
   Avatar,
@@ -20,6 +20,7 @@ import {
 import { OwnerTabBar, OWNER_TAB_BAR_HEIGHT } from '@/components/shared/OwnerTabBar';
 import { spacing, useThemeTokens } from '@/theme';
 import {
+  useCreateShop,
   useOwnerShop,
   useResubmitShop,
   useUpdateShop,
@@ -108,8 +109,10 @@ export default function OwnerShopScreen() {
             <Skeleton width="100%" height={50} />
             <Skeleton width="100%" height={50} />
           </Card>
-        ) : isError || !shop ? (
+        ) : isError ? (
           <Banner tone="error" icon={XCircle}>{t('owner.rejectedBanner')}</Banner>
+        ) : !shop ? (
+          <CreateShopForm />
         ) : (
           <>
             <StatusBanner status={status} />
@@ -172,6 +175,134 @@ export default function OwnerShopScreen() {
       </Screen>
       <OwnerTabBar active="shop" />
     </View>
+  );
+}
+
+interface CreateShopForm {
+  name: string;
+  address: string;
+  phone: string;
+  colorRate: string;
+  bwRate: string;
+  a3Surcharge: string;
+  duplexDiscount: string;
+}
+
+const EMPTY_CREATE_FORM: CreateShopForm = {
+  name: '',
+  address: '',
+  phone: '',
+  colorRate: '',
+  bwRate: '',
+  a3Surcharge: '',
+  duplexDiscount: '',
+};
+
+/**
+ * Shown when the signed-in owner has no shop yet. Collects the fields required by
+ * `POST /shops` and submits a request — the shop is created PENDING admin approval.
+ */
+function CreateShopForm() {
+  const { t } = useTranslation();
+  const tokens = useThemeTokens();
+  const createShop = useCreateShop();
+  const [form, setForm] = useState<CreateShopForm>(EMPTY_CREATE_FORM);
+
+  const canSubmit =
+    form.name.trim().length > 0 &&
+    form.address.trim().length > 0 &&
+    Number(form.colorRate) > 0 &&
+    Number(form.bwRate) > 0;
+
+  const onSubmit = () => {
+    if (!canSubmit) return;
+    createShop.mutate(
+      {
+        name: form.name.trim(),
+        address: form.address.trim(),
+        phone: form.phone.trim() || undefined,
+        colorRate: Number(form.colorRate),
+        bwRate: Number(form.bwRate),
+        a3Surcharge: Number(form.a3Surcharge) || 0,
+        duplexDiscount: Number(form.duplexDiscount) || 0,
+      },
+      {
+        onSuccess: () => toast(t('toast.shopRequested'), { tone: 'success', icon: Check }),
+        onError: (error) => toast(error.message, { tone: 'error' }),
+      },
+    );
+  };
+
+  return (
+    <>
+      <Banner tone="info" icon={Store}>{t('owner.createShopIntro')}</Banner>
+      <Card style={styles.form}>
+        <Input
+          label={t('owner.shopName')}
+          value={form.name}
+          onChangeText={(name) => setForm((prev) => ({ ...prev, name }))}
+          testID="owner-create-name"
+        />
+        <Input
+          label={t('owner.shopAddress')}
+          value={form.address}
+          onChangeText={(address) => setForm((prev) => ({ ...prev, address }))}
+          testID="owner-create-address"
+        />
+        <Input
+          label={t('owner.shopPhone')}
+          value={form.phone}
+          keyboardType="phone-pad"
+          onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
+          testID="owner-create-phone"
+        />
+        <View style={styles.ratesRow}>
+          <Input
+            containerStyle={styles.rateInput}
+            label={t('shop.color')}
+            value={form.colorRate}
+            keyboardType="decimal-pad"
+            onChangeText={(colorRate) => setForm((prev) => ({ ...prev, colorRate }))}
+            testID="owner-create-color-rate"
+          />
+          <Input
+            containerStyle={styles.rateInput}
+            label={t('shop.bw')}
+            value={form.bwRate}
+            keyboardType="decimal-pad"
+            onChangeText={(bwRate) => setForm((prev) => ({ ...prev, bwRate }))}
+            testID="owner-create-bw-rate"
+          />
+        </View>
+        <View style={styles.ratesRow}>
+          <Input
+            containerStyle={styles.rateInput}
+            label={t('shop.a3')}
+            value={form.a3Surcharge}
+            keyboardType="decimal-pad"
+            onChangeText={(a3Surcharge) => setForm((prev) => ({ ...prev, a3Surcharge }))}
+            testID="owner-create-a3"
+          />
+          <Input
+            containerStyle={styles.rateInput}
+            label={t('shop.duplex')}
+            value={form.duplexDiscount}
+            keyboardType="decimal-pad"
+            onChangeText={(duplexDiscount) => setForm((prev) => ({ ...prev, duplexDiscount }))}
+            testID="owner-create-duplex"
+          />
+        </View>
+        <Button
+          onPress={onSubmit}
+          disabled={!canSubmit}
+          isLoading={createShop.isPending}
+          testID="owner-create-shop"
+        >
+          <ButtonIcon><Store size={18} color={tokens.onPrimary} /></ButtonIcon>
+          <ButtonText>{t('owner.createShopCta')}</ButtonText>
+        </Button>
+      </Card>
+    </>
   );
 }
 

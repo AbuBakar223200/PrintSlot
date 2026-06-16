@@ -98,10 +98,13 @@ describe('StaffService', () => {
       updatedAt: new Date('2026-01-02'),
     });
 
-    const result = await service.assignStaff(SHOP_ID, CUSTOMER_ID, OWNER_ID);
+    const result = await service.assignStaff(SHOP_ID, mockCustomerUser.email, OWNER_ID);
 
     expect(result.role).toBe('STAFF');
     expect(result.shopId).toBe(SHOP_ID);
+    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: mockCustomerUser.email },
+    });
     expect(mockPrisma.user.update).toHaveBeenCalledWith({
       where: { id: CUSTOMER_ID },
       data: { role: 'STAFF', shopId: SHOP_ID },
@@ -113,7 +116,7 @@ describe('StaffService', () => {
     mockPrisma.user.findUnique.mockResolvedValueOnce(mockStaffUser);
 
     await expect(
-      service.assignStaff(SHOP_ID, STAFF_USER_ID, OWNER_ID),
+      service.assignStaff(SHOP_ID, mockStaffUser.email, OWNER_ID),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -122,7 +125,7 @@ describe('StaffService', () => {
     mockPrisma.user.findUnique.mockResolvedValueOnce(mockOwnerUser);
 
     await expect(
-      service.assignStaff(SHOP_ID, OWNER_ID, OWNER_ID),
+      service.assignStaff(SHOP_ID, mockOwnerUser.email, OWNER_ID),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -130,7 +133,7 @@ describe('StaffService', () => {
     mockPrisma.shop.findUnique.mockResolvedValueOnce(mockShop);
 
     await expect(
-      service.assignStaff(SHOP_ID, CUSTOMER_ID, 'not-the-owner'),
+      service.assignStaff(SHOP_ID, mockCustomerUser.email, 'not-the-owner'),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -139,7 +142,7 @@ describe('StaffService', () => {
     mockPrisma.user.findUnique.mockResolvedValueOnce(null);
 
     await expect(
-      service.assignStaff(SHOP_ID, 'unknown-user', OWNER_ID),
+      service.assignStaff(SHOP_ID, 'unknown@test.com', OWNER_ID),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -147,7 +150,7 @@ describe('StaffService', () => {
     mockPrisma.shop.findUnique.mockResolvedValueOnce(null);
 
     await expect(
-      service.assignStaff('bad-shop-id', CUSTOMER_ID, OWNER_ID),
+      service.assignStaff('bad-shop-id', mockCustomerUser.email, OWNER_ID),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -160,7 +163,7 @@ describe('StaffService', () => {
       shopId: SHOP_ID,
     });
 
-    await service.assignStaff(SHOP_ID, CUSTOMER_ID, OWNER_ID);
+    await service.assignStaff(SHOP_ID, mockCustomerUser.email, OWNER_ID);
 
     expect(mockNotifications.notifyStaffAssigned).toHaveBeenCalledWith(
       CUSTOMER_ID,

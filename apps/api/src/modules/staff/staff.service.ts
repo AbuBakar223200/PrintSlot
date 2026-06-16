@@ -30,16 +30,16 @@ export class StaffService {
 
   async assignStaff(
     shopId: string,
-    targetUserId: string,
+    email: string,
     currentUserId: string,
   ): Promise<User> {
     const shop = await this.assertOwnership(shopId, currentUserId);
 
     const targetUser = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
+      where: { email },
     });
     if (!targetUser) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('No user found with that email.');
     }
 
     if (targetUser.role !== 'CUSTOMER') {
@@ -47,7 +47,7 @@ export class StaffService {
     }
 
     const updated = await this.prisma.user.update({
-      where: { id: targetUserId },
+      where: { id: targetUser.id },
       data: {
         role: 'STAFF',
         shopId,
@@ -56,7 +56,7 @@ export class StaffService {
 
     // Notify user about their staff promotion
     try {
-      await this.notificationsService.notifyStaffAssigned(targetUserId, shop.name);
+      await this.notificationsService.notifyStaffAssigned(targetUser.id, shop.name);
     } catch (err) {
       // In production, we don't block the transaction/action if notification dispatch fails,
       // but let's make sure it is logged or handled.
