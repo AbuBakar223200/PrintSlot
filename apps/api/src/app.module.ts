@@ -14,6 +14,7 @@ import { ShopsModule } from './modules/shops/shops.module';
 import { SlotsModule } from './modules/slots/slots.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { StaffModule } from './modules/staff/staff.module';
 
 /**
  * Root application module.
@@ -40,6 +41,7 @@ import { AdminModule } from './modules/admin/admin.module';
     UploadModule,
     WalletModule,
     AdminModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [

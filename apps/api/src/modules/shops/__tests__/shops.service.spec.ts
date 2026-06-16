@@ -95,6 +95,26 @@ describe('ShopsService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
+  it('findByOwner returns the mapped shop regardless of status', async () => {
+    mockPrisma.shop.findUnique.mockResolvedValueOnce(baseShop);
+
+    const result = await service.findByOwner('owner-1');
+
+    expect(mockPrisma.shop.findUnique).toHaveBeenCalledWith({
+      where: { ownerId: 'owner-1' },
+    });
+    expect(result?.id).toBe('shop-1');
+    expect(result?.status).toBe(ShopStatus.PENDING);
+  });
+
+  it('findByOwner returns null when the owner has no shop', async () => {
+    mockPrisma.shop.findUnique.mockResolvedValueOnce(null);
+
+    const result = await service.findByOwner('owner-1');
+
+    expect(result).toBeNull();
+  });
+
   it('updateShop succeeds for owner and throws 403 for another owner', async () => {
     mockPrisma.shop.findUnique.mockResolvedValueOnce(baseShop);
     mockPrisma.shop.update.mockResolvedValueOnce({

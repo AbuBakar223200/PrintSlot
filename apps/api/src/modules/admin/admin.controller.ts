@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@printslot/shared';
@@ -39,5 +40,10 @@ export class AdminController {
   @Get('analytics')
   getAnalytics() {
     return this.adminService.getPlatformAnalytics();
+  }
+
+  @Get('shops')
+  listShops(@Query('status') status?: string) {
+    return this.adminService.listAllShops(status);
   }
 }

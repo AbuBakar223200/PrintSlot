@@ -5,7 +5,7 @@ export type AuthRedirectPath =
   | '/(auth)/login'
   | '/(customer)/'
   | '/(staff)/jobs/'
-  | '/(owner)/profile'
+  | '/(owner)/shop'
   | '/(admin)/shops/';
 
 interface AuthRedirectInput {
@@ -25,7 +25,7 @@ interface ProtectedRouteInput {
 const ROLE_HOME: Record<Role, { group: RouteGroup; path: AuthRedirectPath }> = {
   CUSTOMER: { group: '(customer)', path: '/(customer)/' },
   STAFF: { group: '(staff)', path: '/(staff)/jobs/' },
-  SHOP_OWNER: { group: '(owner)', path: '/(owner)/profile' },
+  SHOP_OWNER: { group: '(owner)', path: '/(owner)/shop' },
   PLATFORM_ADMIN: { group: '(admin)', path: '/(admin)/shops/' },
 };
 

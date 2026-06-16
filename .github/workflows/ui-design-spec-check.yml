@@ -1,0 +1,107 @@
+name: UI/UX Design Spec Check
+
+# Reminds contributors to follow the PrintSlot UI/UX design spec
+# (docs/09-ui-ux-design-spec.md) whenever a PR touches the mobile app.
+# Posts a single sticky comment (find-or-update) on mobile-touching PRs only.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# Least-privilege: only what's needed to read the diff and comment on the PR.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Avoid piling up redundant runs when a PR is pushed to repeatedly.
+concurrency:
+  group: ui-design-spec-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  remind-design-spec:
+    name: Remind about UI/UX design spec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect mobile app changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            mobile:
+              - 'apps/mobile/**'
+
+      - name: Post or update sticky design-spec reminder
+        if: steps.changes.outputs.mobile == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- printslot-ui-design-spec -->';
+            const specPath = 'docs/09-ui-ux-design-spec.md';
+            const specLink =
+              `https://github.com/${context.repo.owner}/${context.repo.repo}` +
+              `/blob/${context.payload.pull_request.head.ref}/${specPath}`;
+
+            const body = [
+              marker,
+              '## 🎨 UI/UX Design Spec Compliance (mobile PRs)',
+              '',
+              '> This PR changes files under `apps/mobile/**`.',
+              '',
+              'If this PR implements or changes mobile UI, confirm it conforms to ' +
+                `[${specPath}](${specLink}):`,
+              '',
+              '- [ ] Semantic theme tokens via the theme hook — no raw hex in screens/components',
+              '- [ ] Icons are `lucide-react-native` — NO emoji icons',
+              '- [ ] Text uses the `Text` primitive (Inter / Hind Siliguri); money uses `MoneyText` (৳, tabular figures)',
+              '- [ ] Light + dark both handled via semantic tokens (no hardcoded light/dark)',
+              '- [ ] Composes existing UI primitives (Card/FrostCard/Screen/Sheet/Banner/Skeleton/EmptyState/Chip/SegmentedControl/Stepper/StatusBadge/…) — no bespoke one-off pills/cards',
+              '- [ ] Frost (expo-blur) only on hero zones; list rows + dense data use SOLID cards (never blurred per-row)',
+              '- [ ] All four states: skeleton loading, lucide icon-empty + CTA, inline error + Retry, app-wide offline Banner (mutations blocked offline)',
+              '- [ ] Motion restrained: no per-row list entrance; press-scale 0.97; meaningful transitions only; reduce-motion respected',
+              '- [ ] Lists use FlashList (never ScrollView + .map); rows are light (no queries/context inside rows)',
+              '- [ ] Native `<Modal presentationStyle="formSheet">` via the `Sheet` primitive — NO JS bottom-sheet library; menus via `zeego`',
+              '- [ ] All user-visible strings use i18n keys (EN + BN); BN renders Bengali numerals (১২৩) via the locale formatters; OrderNumber `PS-XXXXX` stays ASCII',
+              '- [ ] Accessibility: WCAG AA contrast, 44×44 touch targets, screen-reader labels on icons/IconButton/StatusBadge/unread dots',
+              '- [ ] Navigation via expo-router `router.push/replace` (no `useNavigation()`); role guards in `_layout.tsx`',
+              '- [ ] No `@prisma/client` import in mobile; server data only via TanStack Query (not Zustand)',
+              '- [ ] OrderNumber (`PS-XXXXX`) shown to users; UUID only in API calls/routes',
+              '- [ ] Price is server-calculated (never send totalPrice/subtotalPrice from client)',
+              '',
+              `Full per-screen spec & rationale: [${specPath}](${specLink}).`,
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            // Find an existing sticky comment by its hidden marker.
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number, per_page: 100 },
+            );
+            const existing = comments.find(
+              (c) => c.body && c.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated existing sticky comment #${existing.id}.`);
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+              core.info('Created new sticky design-spec comment.');
+            }

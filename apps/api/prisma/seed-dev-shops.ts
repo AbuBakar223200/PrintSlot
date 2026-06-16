@@ -73,7 +73,49 @@ const SHOPS: DevShopSeed[] = [
   },
 ];
 
+const SLOT_WINDOWS = [
+  { startTime: '09:00', endTime: '12:00' },
+  { startTime: '12:00', endTime: '15:00' },
+  { startTime: '15:00', endTime: '18:00' },
+  { startTime: '18:00', endTime: '23:59' },
+] as const;
+
+function todayBstDateString(): string {
+  const bstOffsetMs = 6 * 60 * 60 * 1000;
+  const bstNow = new Date(Date.now() + bstOffsetMs);
+  return bstNow.toISOString().slice(0, 10);
+}
+
+function addDays(dateValue: string, days: number): Date {
+  const date = new Date(`${dateValue}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date;
+}
+
 async function main() {
+  const slotTemplates = [];
+
+  for (const window of SLOT_WINDOWS) {
+    let template = await prisma.slotTemplate.findFirst({
+      where: {
+        startTime: window.startTime,
+        endTime: window.endTime,
+        deletedAt: null,
+      },
+    });
+
+    if (!template) {
+      template = await prisma.slotTemplate.create({ data: window });
+    }
+
+    slotTemplates.push(template);
+  }
+
+  console.log(`Seeded ${slotTemplates.length} active SlotTemplates.`);
+
+  const firstDate = todayBstDateString();
+  const slotDates = [0, 1, 2, 3].map((offset) => addDays(firstDate, offset));
+
   for (const s of SHOPS) {
     await prisma.user.upsert({
       where: { id: s.ownerId },
@@ -81,7 +123,7 @@ async function main() {
       update: { role: 'SHOP_OWNER' },
     });
 
-    await prisma.shop.upsert({
+    const shop = await prisma.shop.upsert({
       where: { ownerId: s.ownerId },
       create: {
         ownerId: s.ownerId,
@@ -107,9 +149,39 @@ async function main() {
         defaultProcessingMins: s.defaultProcessingMins,
       },
     });
-    console.log(`✓ ${s.name} (ACTIVE)`);
+
+    let shopSlotCount = 0;
+
+    for (const date of slotDates) {
+      for (const template of slotTemplates) {
+        await prisma.shopSlot.upsert({
+          where: {
+            shopId_templateId_date: {
+              shopId: shop.id,
+              templateId: template.id,
+              date,
+            },
+          },
+          create: {
+            shopId: shop.id,
+            templateId: template.id,
+            date,
+            isOpen: true,
+            maxOrders: 50,
+          },
+          update: {
+            isOpen: true,
+            maxOrders: 50,
+          },
+        });
+        shopSlotCount += 1;
+      }
+    }
+
+    console.log(`Seeded ${s.name} (ACTIVE) with ${shopSlotCount} open ShopSlots.`);
   }
-  console.log(`\nSeeded ${SHOPS.length} ACTIVE shops.`);
+
+  console.log(`\nSeeded ${SHOPS.length} ACTIVE shops and open ShopSlots for ${slotDates.length} dates.`);
 }
 
 main()

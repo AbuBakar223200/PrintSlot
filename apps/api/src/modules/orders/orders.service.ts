@@ -106,7 +106,8 @@ export class OrdersService {
     const orderId = randomUUID();
 
     // 5. Run transactional order placement
-    const order = await this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(
+      async (tx) => {
       // Generate order number inside transaction
       const result = await tx.$queryRawUnsafe<any[]>('SELECT nextval(\'order_number_seq\')');
       const nextVal = result[0]?.nextval || result[0]?.nextVal;
@@ -175,7 +176,7 @@ export class OrdersService {
       }
 
       return createdOrder;
-    });
+    }, { timeout: 20000 });
 
     // 6. Post-commit notifications
     const shopWithStaff = await this.prisma.shop.findUnique({
@@ -347,6 +348,102 @@ export class OrdersService {
 
   private roundDecimal(decimal: Prisma.Decimal): number {
     return Math.round(decimal.toNumber() * 100) / 100;
+  }
+
+  /**
+   * Flatten a Prisma order (with `customer` + `slot.template` + `orderFiles`
+   * included) into the counter-facing view shape: numeric prices, plus flat
+   * `customerName` / `customerPhone` / `slotTime` (window for SLOT mode only).
+   * Keeps the nested `shop` / `slot` / `orderFiles` so existing consumers are
+   * unaffected — the flat fields are additive.
+   */
+  private flattenOrderView(order: any): any {
+    const template = order.slot?.template;
+    const slotTime =
+      order.pickupMode === 'SLOT' && template
+        ? `${template.startTime}–${template.endTime}`
+        : null;
+    return {
+      ...order,
+      totalPrice: Number(order.totalPrice?.toString?.() ?? order.totalPrice),
+      customerName: order.customer?.name ?? null,
+      customerPhone: order.customer?.phone ?? null,
+      slotTime,
+      orderFiles: Array.isArray(order.orderFiles)
+        ? order.orderFiles.map((f: any) => ({
+            ...f,
+            subtotalPrice: Number(f.subtotalPrice?.toString?.() ?? f.subtotalPrice),
+          }))
+        : order.orderFiles,
+    };
+  }
+
+  /**
+   * Shop-scoped order queue for the staff dashboard + owner jobs tab
+   * (`GET /shops/:id/orders`). Optional `statuses` filter; SLOT pickups sorted
+   * before walk-in QUEUE. Returns `{ items, total, page, limit }` with the
+   * flattened counter view (customer name/phone + slot window).
+   */
+  async listShopOrders(
+    shopId: string,
+    currentUser: any,
+    statuses?: string[],
+    queryPage?: number | string,
+    queryLimit?: number | string,
+  ): Promise<{ items: any[]; total: number; page: number; limit: number }> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, ownerId: true },
+    });
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    const isStaff = currentUser.role === 'STAFF' && currentUser.shopId === shopId;
+    const isOwner = currentUser.role === 'SHOP_OWNER' && shop.ownerId === currentUser.id;
+    const isAdmin = currentUser.role === 'PLATFORM_ADMIN';
+    if (!isStaff && !isOwner && !isAdmin) {
+      throw new ForbiddenException('You do not have access to this shop.');
+    }
+
+    const where: Prisma.OrderWhereInput = { shopId };
+    if (statuses && statuses.length > 0) {
+      where.status = { in: statuses as any };
+    }
+
+    const allOrders = await this.prisma.order.findMany({
+      where,
+      include: {
+        orderFiles: true,
+        slot: { include: { template: true } },
+        shop: true,
+        customer: true,
+      },
+    });
+
+    // SLOT pickups first (by slot date then start time), then walk-in QUEUE by createdAt.
+    allOrders.sort((a, b) => {
+      if (a.pickupMode === 'SLOT' && b.pickupMode !== 'SLOT') return -1;
+      if (a.pickupMode !== 'SLOT' && b.pickupMode === 'SLOT') return 1;
+      if (a.pickupMode === 'SLOT' && b.pickupMode === 'SLOT') {
+        const dateA = a.slot?.date?.getTime?.() ?? 0;
+        const dateB = b.slot?.date?.getTime?.() ?? 0;
+        if (dateA !== dateB) return dateA - dateB;
+        const timeA = a.slot?.template?.startTime || '';
+        const timeB = b.slot?.template?.startTime || '';
+        return timeA.localeCompare(timeB);
+      }
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    const page = Math.max(1, Number(queryPage || 1));
+    const limit = Math.min(100, Math.max(1, Number(queryLimit || 50)));
+    const total = allOrders.length;
+    const items = allOrders
+      .slice((page - 1) * limit, (page - 1) * limit + limit)
+      .map((o) => this.flattenOrderView(o));
+
+    return { items, total, page, limit };
   }
 
   async getOrderWithSlotAndShop(orderId: string) {
@@ -563,6 +660,7 @@ export class OrdersService {
         orderFiles: true,
         shop: true,
         slot: { include: { template: true } },
+        customer: true,
       },
     });
 
@@ -592,7 +690,7 @@ export class OrdersService {
     }
 
     return {
-      ...order,
+      ...this.flattenOrderView(order),
       queuePosition,
       etaMins,
     };
@@ -623,40 +721,43 @@ export class OrdersService {
       throw new BadRequestException('Cannot cancel order in this status.');
     }
 
-    const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CANCELLED',
-          cancelledAt: new Date(),
-        },
-        include: {
-          customer: true,
-          shop: true,
-        },
-      });
-
-      if (order.paymentMethod === 'WALLET') {
-        await this.walletService.credit(
-          order.customerId,
-          Number(order.totalPrice),
-          TransactionReason.ORDER_REFUND,
-          orderId,
-          tx,
-        );
-      }
-
-      if (order.pickupMode === 'SLOT' || order.slotId) {
-        await tx.shopSlot.update({
-          where: { id: order.slotId },
+    const updatedOrder = await this.prisma.$transaction(
+      async (tx) => {
+        const updated = await tx.order.update({
+          where: { id: orderId },
           data: {
-            currentCount: { decrement: 1 },
+            status: 'CANCELLED',
+            cancelledAt: new Date(),
+          },
+          include: {
+            customer: true,
+            shop: true,
           },
         });
-      }
 
-      return updated;
-    });
+        if (order.paymentMethod === 'WALLET') {
+          await this.walletService.credit(
+            order.customerId,
+            Number(order.totalPrice),
+            TransactionReason.ORDER_REFUND,
+            orderId,
+            tx,
+          );
+        }
+
+        if (order.pickupMode === 'SLOT' || order.slotId) {
+          await tx.shopSlot.update({
+            where: { id: order.slotId },
+            data: {
+              currentCount: { decrement: 1 },
+            },
+          });
+        }
+
+        return updated;
+      },
+      { timeout: 20000 },
+    );
 
     // Notify & emit status updates out-of-band/post-commit
     process.nextTick(async () => {
@@ -688,6 +789,105 @@ export class OrdersService {
         );
       } catch (err: any) {
         this.logger.error(`Failed to emit order status change gateway event: ${err.message}`, err.stack);
+      }
+    });
+
+    return updatedOrder;
+  }
+
+  /**
+   * Valid status transitions map.
+   */
+  private static readonly VALID_TRANSITIONS: Record<string, string[]> = {
+    QUEUED: ['PROCESSING'],
+    SCHEDULED: ['PROCESSING'],
+    PROCESSING: ['READY'],
+    READY: ['COLLECTED'],
+  };
+
+  /**
+   * Advances an order's status with optimistic lock and role+ownership checks.
+   * Order of checks: 404 → 403 → 409 → 400
+   */
+  async advanceStatus(
+    orderId: string,
+    dto: { status: string; expectedCurrentStatus: string },
+    currentUser: any,
+  ): Promise<any> {
+    // 1. Load order
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { customer: true },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // 2. Role + ownership check
+    if (currentUser.role !== 'STAFF' && currentUser.role !== 'SHOP_OWNER') {
+      throw new ForbiddenException('Only staff or shop owner can advance order status');
+    }
+    if (!currentUser.shopId || order.shopId !== currentUser.shopId) {
+      throw new ForbiddenException('You do not have permission to update this order');
+    }
+
+    // 3. Optimistic lock
+    if (order.status !== dto.expectedCurrentStatus) {
+      throw new HttpException(
+        'Order status has changed, please refresh.',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // 4. Transition validity
+    const allowedTargets = OrdersService.VALID_TRANSITIONS[order.status] || [];
+    if (!allowedTargets.includes(dto.status)) {
+      throw new BadRequestException(
+        `Invalid status transition: ${order.status} → ${dto.status}`,
+      );
+    }
+
+    // 5. Build update data with server-side timestamps
+    const updateData: any = { status: dto.status };
+    if (dto.status === 'PROCESSING') {
+      updateData.processingStartedAt = new Date();
+    }
+    if (dto.status === 'READY') {
+      updateData.readyAt = new Date();
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+      include: { customer: true },
+    });
+
+    // 6. Post-commit: gateway emit + notifications
+    process.nextTick(async () => {
+      try {
+        await this.ordersGateway.emitStatusChanged(
+          updatedOrder.id,
+          dto.status,
+          updatedOrder.updatedAt,
+        );
+      } catch (err: any) {
+        this.logger.error(`Failed to emit status change: ${err.message}`, err.stack);
+      }
+
+      try {
+        if (dto.status === 'PROCESSING') {
+          await this.notificationsService.notifyOrderAccepted(
+            { id: updatedOrder.id, orderNumber: updatedOrder.orderNumber },
+            { id: updatedOrder.customerId },
+          );
+        } else if (dto.status === 'READY') {
+          await this.notificationsService.notifyOrderReady(
+            { id: updatedOrder.id, orderNumber: updatedOrder.orderNumber },
+            { id: updatedOrder.customerId },
+          );
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to send status notification: ${err.message}`, err.stack);
       }
     });
 

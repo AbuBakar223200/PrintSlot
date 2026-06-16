@@ -31,13 +31,13 @@ describe('resolveAuthRedirect', () => {
     })).toBeNull();
   });
 
-  it('sends an owner outside the owner group to the owner profile', () => {
+  it('sends an owner outside the owner group to the owner shop', () => {
     expect(resolveAuthRedirect({
       isHydrated: true,
       isAuthenticated: true,
       role: Role.SHOP_OWNER,
       currentSegments: ['(auth)', 'login'],
-    })).toBe('/(owner)/profile');
+    })).toBe('/(owner)/shop');
   });
 
   it('keeps authenticated users inside their own route group', () => {
@@ -69,8 +69,8 @@ describe('resolveAuthRedirect', () => {
 });
 
 describe('getRoleHomePath', () => {
-  it('returns the owner profile route for shop owners', () => {
-    expect(getRoleHomePath(Role.SHOP_OWNER)).toBe('/(owner)/profile');
+  it('returns the owner shop route for shop owners', () => {
+    expect(getRoleHomePath(Role.SHOP_OWNER)).toBe('/(owner)/shop');
   });
 
   it('returns null for unknown roles', () => {

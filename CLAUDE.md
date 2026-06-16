@@ -76,6 +76,7 @@ Before touching any file, read these in order:
 3. **`docs/05-api-contract.md`** — every endpoint, request/response shape, WebSocket events, error codes.
 4. **`docs/06-definition-of-done.md`** — 21 criteria every feature must satisfy before it is done.
 5. **`docs/08-implementation-slices.md`** — slice-to-issue status. Closed slices must not be reimplemented.
+6. **docs/09-ui-ux-design-spec.md** — the locked UI/UX design system (tokens, theming, typography, iconography, component primitives) and the detailed per-screen spec for every mobile screen. Read before implementing any mobile UI slice.
 
 ---
 

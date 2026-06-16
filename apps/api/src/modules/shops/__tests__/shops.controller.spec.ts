@@ -35,6 +35,7 @@ const shopsService = {
     limit: 20,
   }),
   findById: jest.fn().mockResolvedValue(shop),
+  findByOwner: jest.fn().mockResolvedValue(shop),
   updateShop: jest.fn().mockResolvedValue(shop),
   updateStatus: jest.fn().mockResolvedValue(shop),
   resubmit: jest.fn().mockResolvedValue(shop),
@@ -135,6 +136,34 @@ describe('ShopsController', () => {
     });
 
     expect(res.status).toBe(400);
+  });
+
+  it('GET /shops/mine with SHOP_OWNER returns the owner shop', async () => {
+    app = await createApp(Role.SHOP_OWNER);
+
+    const res = await request(app.getHttpServer()).get('/shops/mine');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.id).toBe('shop-1');
+    expect(shopsService.findByOwner).toHaveBeenCalledWith('owner-1');
+  });
+
+  it('GET /shops/mine returns null when the owner has no shop', async () => {
+    app = await createApp(Role.SHOP_OWNER);
+    shopsService.findByOwner.mockResolvedValueOnce(null);
+
+    const res = await request(app.getHttpServer()).get('/shops/mine');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeNull();
+  });
+
+  it('GET /shops/mine with non-SHOP_OWNER returns 403', async () => {
+    app = await createApp(Role.CUSTOMER);
+
+    const res = await request(app.getHttpServer()).get('/shops/mine');
+
+    expect(res.status).toBe(403);
   });
 
   it('GET /shops/:id/analytics with SHOP_OWNER succeeds', async () => {

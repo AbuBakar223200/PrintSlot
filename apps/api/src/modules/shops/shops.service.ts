@@ -110,6 +110,19 @@ export class ShopsService {
     return this.mapToSharedShop(shop);
   }
 
+  /**
+   * Resolve the signed-in owner's own shop regardless of status (PENDING,
+   * REJECTED, ACTIVE, SUSPENDED). `ownerId` is unique, so there is at most one.
+   * Returns `null` when the owner has not created a shop yet.
+   */
+  async findByOwner(ownerId: string): Promise<Shop | null> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { ownerId },
+    });
+
+    return shop ? this.mapToSharedShop(shop) : null;
+  }
+
   async updateShop(
     shopId: string,
     dto: UpdateShopDto,

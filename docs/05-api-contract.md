@@ -48,7 +48,8 @@
 | Method | Path | Auth | Role | Request Body / Query | Response `data` |
 |---|---|---|---|---|---|
 | POST | `/shops` | Yes | SHOP_OWNER | `{ name, address, phone?, colorRate, bwRate, a3Surcharge, duplexDiscount }` | `Shop` |
-| GET | `/shops` | Yes | CUSTOMER · STAFF · SHOP_OWNER · PLATFORM_ADMIN | `?search=&page=1&limit=20` | `{ items: Shop[], total, page, limit }` |
+| GET | `/shops` | Yes | CUSTOMER · STAFF · SHOP_OWNER · PLATFORM_ADMIN | `?search=&page=1&limit=20` | `{ items: Shop[], total, page, limit }` (ACTIVE shops only) |
+| GET | `/shops/mine` | Yes | SHOP_OWNER | — | `Shop \| null` — caller's own shop regardless of status (PENDING/REJECTED/ACTIVE/SUSPENDED); `null` if none created yet. Declared before `/shops/:id` so `mine` is not captured as an id. |
 | GET | `/shops/:id` | Yes | Any | — | `Shop` |
 | PATCH | `/shops/:id` | Yes | SHOP_OWNER (own shop) | `{ name?, address?, phone?, colorRate?, bwRate?, a3Surcharge?, duplexDiscount? }` | `Shop` |
 | PATCH | `/shops/:id/status` | Yes | PLATFORM_ADMIN | `{ status: ACTIVE\|REJECTED\|SUSPENDED, rejectionReason? }` | `Shop` |
@@ -81,7 +82,7 @@
 
 | Method | Path | Auth | Role | Request Body | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/shops/:id/staff` | Yes | SHOP_OWNER (own shop) | `{ userId }` | `User` (updated with shopId + role=STAFF) |
+| POST | `/shops/:id/staff` | Yes | SHOP_OWNER (own shop) | `{ email }` | `User` (the customer matched by email, updated with shopId + role=STAFF). 404 if no user has that email; 400 if the email isn't a CUSTOMER. |
 | DELETE | `/shops/:id/staff/:userId` | Yes | SHOP_OWNER (own shop) | — | `{ success: true }` |
 | GET | `/shops/:id/staff` | Yes | SHOP_OWNER (own shop) | — | `User[]` |
 
@@ -93,7 +94,7 @@
 
 | Method | Path | Auth | Role | Request | Response `data` |
 |---|---|---|---|---|---|
-| POST | `/upload` | Yes | CUSTOMER | `multipart/form-data { file }` | `{ url: string, fileName: string, fileSize: number, mimeType: string, detectedPages: number\|null }` |
+| POST | `/upload` | Yes | CUSTOMER | `multipart/form-data { file }` | `{ fileUrl: string, fileName: string, fileSize: number, mimeType: string, detectedPages: number\|null }` |
 
 > `detectedPages` is non-null only for PDF files (via `pdf-parse`). For DOCX, PPTX, XLS, XLSX, JPG, PNG → returns `null`. Client shows a manual page count input field when `null`.
 
@@ -159,6 +160,7 @@
 |---|---|---|---|---|---|
 | GET | `/shops/:id/analytics` | Yes | SHOP_OWNER (own shop) | `?date=YYYY-MM-DD` | `{ totalOrders, revenue, byStatus: { QUEUED, PROCESSING, READY, COLLECTED, CANCELLED }, avgProcessingMins }` |
 | GET | `/admin/analytics` | Yes | PLATFORM_ADMIN | — | `{ totalShops, totalOrders, revenuePerShop: [{ shopId, name, revenue }], pendingApprovals }` |
+| GET | `/admin/shops` | Yes | PLATFORM_ADMIN | `?status?` | `{ items: Shop[], total, page, limit }` — **all** shops for the approval queue (the public `GET /shops` is ACTIVE-only). |
 | GET | `/admin/config` | Yes | PLATFORM_ADMIN | — | `AppConfig[]` |
 | PATCH | `/admin/config/:key` | Yes | PLATFORM_ADMIN | `{ value: string }` | `AppConfig` |
 

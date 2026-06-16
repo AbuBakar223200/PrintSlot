@@ -18,7 +18,30 @@
 | Slice 03 | #11 | Mobile profile screen + push device registration on launch | Closed | Merged in PR #49 at 2026-05-19; mobile/API lint pass, mobile/API tests pass. |
 | Slice 04 | #12 | ShopsService - CRUD + status transitions | Closed | Merged in PR #53 at 2026-05-19 via integration issue #54; API lint + 69/69 tests pass. |
 | Slice 05 | #13 | Customer shop list screen | Closed | Merged in PR #51 at 2026-05-19 via integration issue #54; mobile lint + 46/46 tests pass. |
-| Slice 07 | #15 | SlotsModule - templates + ShopSlots + active slot detection | Open | GitHub issue #15 is `OPEN` as of 2026-05-20; implementation branch `ihm/feat/slots-module-api`. |
+| Slice 07 | #15 | SlotsModule - templates + ShopSlots + active slot detection | Closed | GitHub issue #15 is `CLOSED`; merged in PR #57; closed as completed on 2026-06-07. |
+| Slice 08 | #16 | Customer slot picker component | Open | GitHub issue #16 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/slot-picker-component-mobile`. |
+| Slice 11 | #19 | File picker + upload service + FilePickerCard | Closed | Merged in PR #69 on 2026-06-07; mobile/API/shared lint pass, mobile/API/shared tests pass. |
+| Slice 14 | #22 | Order creation wizard (4 steps) | Open | GitHub issue #22 is `OPEN` as of 2026-06-07; implementation branch `ab/feat/order-creation-wizard-mobile`. |
+| Slice 16 | #24 | Order detail screen + real-time WebSocket tracking + StatusBadge | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 18 | #26 | Order history screen + OrderCard + cancel flow | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 20 | #28 | Staff job dashboard + job detail + status advance | Closed | Merged in PR #74 into `ihm/feat/ui-migration` on 2026-06-12; parity scanner + tsc + 105 tests pass. |
+| Slice 22 | #30 | Wallet screen — balance + transaction history | Closed | On `ihm/feat/ui-migration`; gradient hero + 2-decimal balance fixed in the parity foundation. Closed 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 24 | #32 | Notifications screen + unread badge | Closed | On `ihm/feat/ui-migration`; unread tint + ghost button fixed in the parity foundation. Closed 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 26 | #34 | Staff management screen in owner group | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 28 | #36 | Admin shop approval screen | Closed | Merged in PR #77 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 29 | #37 | Admin AppConfig + platform analytics + slot templates screens | Closed | Merged in PR #77 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 30 | #38 | (owner) route group — layout + shop screen | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 31 | #39 | (owner) slots, jobs, analytics screens | Closed | Merged in PR #76 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 32 | #40 | (customer) tab layout + home screen | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
+| Slice 33 | #41 | i18n setup — EN + BN translations across all screens | Closed | Full prototype dictionary ported into `src/i18n/locales` (parity foundation + per-role PRs). Closed 2026-06-12. |
+
+## Follow-up Fixes
+
+> Post-slice corrections that span already-closed slices. Listed here so agents don't re-discover the same bugs.
+
+| Date | Area | Change | Branch |
+|---|---|---|---|
+| 2026-06-16 | Slices 26 + 30 | Owner shop request flow: added `GET /shops/mine` (owner's shop regardless of status) + inline "create / request shop" form on the My Shop tab; removed the `getMyShop` fallback that handed new owners someone else's ACTIVE shop. Fixed `staff.map is not a function` — `GET /shops/:id/staff` controller double-wrapped its payload (`{ data: User[] }` under the global `ResponseInterceptor`); now returns `User[]` per `docs/05-api-contract.md`. Staff are now promoted by **email** (`POST /shops/:id/staff { email }`) instead of UUID — owners don't know customer UUIDs. | `ihm/feat/owner-shop-request-flow` |
 
 ## Agent Rules
 
