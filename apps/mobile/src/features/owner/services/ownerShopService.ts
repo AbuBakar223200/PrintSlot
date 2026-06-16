@@ -1,4 +1,4 @@
-import type { Shop, ShopListResult } from '@printslot/shared';
+import type { Shop } from '@printslot/shared';
 import { apiFetch } from '@/services/api';
 
 /** Fields the owner can edit on their shop (docs/05 — `PATCH /shops/:id`). */
@@ -12,16 +12,33 @@ export interface UpdateShopInput {
   duplexDiscount?: number;
 }
 
+/** Fields required to create/request a shop (docs/05 — `POST /shops`). */
+export interface CreateShopInput {
+  name: string;
+  address: string;
+  phone?: string;
+  colorRate: number;
+  bwRate: number;
+  a3Surcharge: number;
+  duplexDiscount: number;
+}
+
 export const ownerShopService = {
   /**
-   * Resolve the signed-in owner's shop. `GET /shops` is scoped server-side, but we
-   * additionally filter by `ownerId` so the screen always shows the owner's own
-   * shop even when the list includes others.
+   * Resolve the signed-in owner's own shop regardless of status (`GET /shops/mine`).
+   * Returns `null` when the owner has not created a shop yet — the screen then shows
+   * the create/request form. (`ownerId` argument kept for the query key only.)
    */
-  async getMyShop(ownerId: string): Promise<Shop | null> {
-    const result = await apiFetch<ShopListResult>('/shops');
-    const mine = result.items.find((s) => s.ownerId === ownerId);
-    return mine ?? result.items[0] ?? null;
+  getMyShop(_ownerId: string): Promise<Shop | null> {
+    return apiFetch<Shop | null>('/shops/mine');
+  },
+
+  /** Create and request a new shop — starts PENDING admin approval (`POST /shops`). */
+  createShop(input: CreateShopInput): Promise<Shop> {
+    return apiFetch<Shop>('/shops', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
 
   /** Persist owner edits (`PATCH /shops/:id`). */

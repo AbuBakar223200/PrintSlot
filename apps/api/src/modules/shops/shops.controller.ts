@@ -49,6 +49,13 @@ export class ShopsController {
     });
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SHOP_OWNER)
+  findMine(@CurrentUser() user: { id: string }): Promise<Shop | null> {
+    return this.shopsService.findByOwner(user.id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CUSTOMER, Role.STAFF, Role.SHOP_OWNER, Role.PLATFORM_ADMIN)

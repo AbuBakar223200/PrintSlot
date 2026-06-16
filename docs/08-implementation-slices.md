@@ -35,6 +35,14 @@
 | Slice 32 | #40 | (customer) tab layout + home screen | Closed | Merged in PR #75 into `ihm/feat/ui-migration` on 2026-06-12; parity + tsc + 108 tests pass. |
 | Slice 33 | #41 | i18n setup — EN + BN translations across all screens | Closed | Full prototype dictionary ported into `src/i18n/locales` (parity foundation + per-role PRs). Closed 2026-06-12. |
 
+## Follow-up Fixes
+
+> Post-slice corrections that span already-closed slices. Listed here so agents don't re-discover the same bugs.
+
+| Date | Area | Change | Branch |
+|---|---|---|---|
+| 2026-06-16 | Slices 26 + 30 | Owner shop request flow: added `GET /shops/mine` (owner's shop regardless of status) + inline "create / request shop" form on the My Shop tab; removed the `getMyShop` fallback that handed new owners someone else's ACTIVE shop. Fixed `staff.map is not a function` — `GET /shops/:id/staff` controller double-wrapped its payload (`{ data: User[] }` under the global `ResponseInterceptor`); now returns `User[]` per `docs/05-api-contract.md`. Staff are now promoted by **email** (`POST /shops/:id/staff { email }`) instead of UUID — owners don't know customer UUIDs. | `ihm/feat/owner-shop-request-flow` |
+
 ## Agent Rules
 
 - Treat closed slices as completed project history. Do not create a new implementation for a closed slice unless the user explicitly asks to reopen or replace it.

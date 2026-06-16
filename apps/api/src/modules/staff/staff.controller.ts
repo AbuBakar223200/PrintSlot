@@ -28,7 +28,7 @@ export class StaffController {
     @Body(new ZodValidationPipe(AssignStaffSchema)) dto: AssignStaffDto,
     @CurrentUser() user: { id: string },
   ): Promise<User> {
-    return this.staffService.assignStaff(shopId, dto.userId, user.id);
+    return this.staffService.assignStaff(shopId, dto.email, user.id);
   }
 
   @Delete(':userId')
@@ -46,8 +46,7 @@ export class StaffController {
   async listStaff(
     @Param('id') shopId: string,
     @CurrentUser() user: { id: string },
-  ): Promise<{ data: User[] }> {
-    const data = await this.staffService.listStaff(shopId, user.id);
-    return { data };
+  ): Promise<User[]> {
+    return this.staffService.listStaff(shopId, user.id);
   }
 }
