@@ -318,8 +318,8 @@ Built by **Team ParaDox** for the Mobile Application Development project.
 
 | Name | Student ID |
 |---|---|
-| Ikramul Hasan Moral | 0112230195 |
-| Samiur Rahman Omlan | 0112230200 |
-| Md. Abu Bakar | 0112230435 |
-| Md. Touhidul Islam | 0112230489 |
+| Ikramul Hasan Moral | 0112230489 |
+| Samiur Rahman Omlan | 0112230195 |
+| Md. Abu Bakar | 0112230200 |
+| Md. Touhidul Islam | 0112230435 |
 | Omar Shahriar Nafi | 0112230208 |
